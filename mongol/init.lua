@@ -219,7 +219,7 @@ function connmethods:cmd ( db , q , collection )
 	elseif not r[1] then
 		error ( "No results returned" )
 	elseif r[1].ok == 0 then -- Failure
-		return nil , r[1].errmsg , r , t
+		return nil , r[1].errmsg , r[1] , t
 	else
 		return r[1]
 	end
