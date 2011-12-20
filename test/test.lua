@@ -1,6 +1,5 @@
 local collection = arg[1] or "db"
 
-package.path = package.path .. ";./?/init.lua"
 local conn = require "mongol" ( )
 
 local ismaster = conn:ismaster ( )
