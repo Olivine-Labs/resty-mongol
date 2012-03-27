@@ -13,7 +13,8 @@ local t_insert , t_concat = table.insert , table.concat
 
 local attachpairs_start = misc.attachpairs_start
 
-local socket = require "socket"
+--local socket = require "socket"
+local socket = ngx.socket.tcp()
 
 local md5 = require "md5"
 local md5hex = md5.sumhexa
@@ -40,7 +41,12 @@ local function connect ( host , port )
 	host = host or "localhost"
 	port = port or 27017
 
-	local sock = socket.connect ( host , port )
+	--local sock = socket.connect ( host , port )
+	local sock = socket
+	ok,err = sock:connect ( host , port )
+    if not ok then
+        return false
+    end
 
 	return setmetatable ( {
 			host = host ;
