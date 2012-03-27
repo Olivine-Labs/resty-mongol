@@ -1,23 +1,22 @@
-Mongol - Lua Mongodb Driver
+lua-resty-mongol - Lua Mongodb driver for ngx_lua base on the cosocket API
 ===========================
 
-Written by daurnimator
+Thanks to project Mongol by daurnimator
 
 License is MIT/X11
 
 Dependancies
 ---------------------------
 
-lua 5.1
+luajit
 
-luasocket
+lua-md5
+
+[ngx_lua 0.5.0rc5](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.0.11.7](http://openresty.org/#Download) is required.
+
 
 Installation
 ---------------------------
-
-Copy the mongol directory to somewhere lua will find it (eg; for linux the standard location is /usr/share/lua/5.1/ )
-
-or more simply; use the provided make file:
 
 		make install
 

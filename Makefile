@@ -1,3 +1,4 @@
+OPENRESTY_PREFIX=/usr/local/openresty
 LUA = lua -e"package.path = package.path .. ';./?/init.lua'"
 LUA_SHAREDIR = $(DESTDIR)/usr/share/lua/5.1
 
@@ -8,5 +9,4 @@ install:
 	install -m644 mongol/* $(LUA_SHAREDIR)/mongol
 
 test:
-	$(LUA) test/test.lua
-	$(LUA) test/test_bson.lua
+	PATH=$(OPENRESTY_PREFIX)/nginx/sbin:$$PATH prove -I../test-nginx/lib -r t
