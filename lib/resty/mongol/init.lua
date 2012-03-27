@@ -37,6 +37,10 @@ local new_cursor = require ( mod_name .. ".cursor" )
 local connmethods = { }
 local connmt = { __index = connmethods }
 
+local colmethods = { }
+local colmt = { __index = colmethods }
+
+
 local function connect ( host , port )
 	host = host or "localhost"
 	port = port or 27017
@@ -313,12 +317,145 @@ function dbmethods:auth ( username , password )
 		 } , "authenticate" ) ) ~= nil
 end
 
+function dbmethods:get_col(collection)
+    if not collection then
+        return nil, "collection needed"
+    end   
+
+    return setmetatable ( {
+            conn = self.conn;
+            db_obj = self;
+            db = self.db ;
+            col = collection;
+        } , colmt )
+end
+
+function colmethods:insert(docs, continue_on_error)
+    if #docs < 1 then
+        return nil, "docs needed"
+    end
+
+    local flags = 2^0*( continue_on_error and 1 or 0 )
+
+    local t = { }
+    for i , v in ipairs(docs) do
+        t[i] = to_bson(v)
+    end
+
+    local m = num_to_le_uint(flags)..full_collection_name(self, self.col)
+                ..t_concat(t)
+    return docmd(self.conn, "INSERT", m)
+end
+
+function colmethods:update(selector, update, upsert, multiupdate)
+    local flags = 2^0*( upsert and 1 or 0 ) + 2^1*( multiupdate and 1 or 0 )
+
+    selector = to_bson(selector)
+    update = to_bson(update)
+
+    local m = "\0\0\0\0" .. full_collection_name(self, self.col) 
+                .. num_to_le_uint ( flags ) .. selector .. update
+    return docmd(self.conn, "UPDATE", m)
+end
+
+function colmethods:delete(selector, SingleRemove)
+    local flags = 2^0*( SingleRemove and 1 or 0 )
+
+    selector = to_bson(selector)
+
+    local m = "\0\0\0\0" .. full_collection_name(self, self.col) 
+                .. num_to_le_uint(flags) .. selector
+
+    return docmd(self.conn, "DELETE", m)
+end
+
+function colmethods:kill_cursors(cursorIDs)
+    local n = #cursorIDs
+    cursorIDs = t_concat(cursorIDs)
+
+    local m = "\0\0\0\0" .. full_collection_name(self, self.col) 
+                .. num_to_le_uint(n) .. cursorIDs
+
+    return docmd(self.conn, "KILL_CURSORS", m )
+end
+
+function colmethods:query(query, returnfields, numberToSkip, numberToReturn, options)
+    numberToSkip = numberToSkip or 0
+
+    local flags = 0
+    if options then
+        flags = 2^1*( options.TailableCursor and 1 or 0 )
+            + 2^2*( options.SlaveOk and 1 or 0 )
+            + 2^3*( options.OplogReplay and 1 or 0 )
+            + 2^4*( options.NoCursorTimeout and 1 or 0 )
+            + 2^5*( options.AwaitData and 1 or 0 )
+            + 2^6*( options.Exhaust and 1 or 0 )
+            + 2^7*( options.Partial and 1 or 0 )
+    end
+
+    query = to_bson(query)
+    if returnfields then
+        returnfields = to_bson(returnfields)
+    else
+        returnfields = ""
+    end
+
+    local m = num_to_le_uint(flags) .. full_collection_name(self, self.col)
+        .. num_to_le_uint(numberToSkip) .. num_to_le_int(numberToReturn or -1 )
+        .. query .. returnfields
+
+    local req_id = docmd(self.conn, "QUERY", m)
+    return handle_reply(self.conn, req_id, numberToSkip)
+end
+
+function colmethods:getmore(cursorID, numberToReturn, offset_i)
+    local m = "\0\0\0\0" .. full_collection_name(self, self.col) 
+                .. num_to_le_int(numberToReturn or 0) .. cursorID
+
+    local req_id = docmd(self.conn, "GET_MORE" , m)
+    return handle_reply(self.conn, req_id, offset_i)
+end
+
+function colmethods:count(query)
+    local r = assert(self.conn:cmd(self.db, attachpairs_start({
+            count = self.col;
+            query = query or { } ;
+        } , "count" ) ) )
+    return r.n
+end
+
+function colmethods:drop(collection)
+    return assert(self.conn:cmd(self.db, {drop = self.col} ) )
+end
+
+function colmethods:find(query, returnfields)
+    return new_cursor(self.db_obj, self.col, query, returnfields)
+end
+
 function connmethods:new_db_handle ( db )
 	assert ( db , "No database provided" )
 	return setmetatable ( {
 			conn = self ;
 			db = db ;
 		} , dbmt )
+end
+
+function connmethods:set_timeout(timeout)
+    local sock = self.sock
+    if not sock then
+        return nil, "not initialized"
+    end
+
+    return sock:settimeout(timeout)
+end
+
+function connmethods:set_keepalive(...)
+    local sock = self.sock
+    if not sock then
+        return nil, "not initialized"
+    end
+
+    return sock:setkeepalive(...)
 end
 
 connmt.__call = connmethods.new_db_handle

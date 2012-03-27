@@ -3,7 +3,7 @@
 use Test::Nginx::Socket;
 use Cwd qw(cwd);
 
-repeat_each(2);
+repeat_each(1);
 
 plan tests => repeat_each() * (3 * blocks());
 
@@ -23,7 +23,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set and get
+=== TEST 1: insert
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -31,13 +31,19 @@ __DATA__
             local mongo = require "resty.mongol"
             local conn = mongo("10.6.2.51")
 
-            --red:set_timeout(1000) -- 1 sec
+            conn:set_timeout(1000) -- 1 sec
+            --local ok, err = conn:set_keepalive() -- 1 sec
+            --if not ok then
+            --    ngx.say("failed to set keepalive: ", err)
+            --    return
+            --end
 
             local db = conn:new_db_handle ( "test" )
-            col = "test"
-            db:delete(col, {name="dog"} )
-            db:insert(col, {{name="dog"}})
-            r = db:find(col, {name="dog"})
+            col = db:get_col("test")
+
+            col:delete({name="dog"})
+            col:insert({{name="dog"}})
+            r = col:find({name="dog"})
 
             for i , v in r:pairs() do
                 if v["name"] then

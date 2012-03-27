@@ -29,8 +29,8 @@ Requring the module will return a function that connects to mongod:
 it takes a host (default localhost) and a port (default 27017);
 it returns a connection object.
 
-		mongol = require "mongol"
-		conn = mongol ( ) -- Connect to localhost:27017
+		mongol = require "resty.mongol"
+		conn = mongol() -- Connect to localhost:27017
 
 ###Connection objects have server wide methods.
 
@@ -68,19 +68,23 @@ Returns a database object
 ####db:dropDatabase ( )
 ####db:add_user ( username , password )
 ####db:auth ( username , password )
-####db:count ( collection , query )
-####db:drop ( collection )
-####db:update ( collection , selector , update , upsert , multiupdate )
-####db:insert ( collection , docs , continue_on_error )
-####db:delete ( collection , selector , SingleRemove )
-####db:kill_cursors ( collection , cursorIDs )
-####db:query ( collection , query , returnfields , numberToSkip , numberToReturn , options )
-####db:getmore ( collection , cursorID , [numberToReturn] , [offset_i] )
+####col = db:get_col(collection_name)
+Returns a collection object for more operations.
+
+###Collection objects
+
+####col:count(query)
+####col:drop()
+####col:update(selector, update, upsert, multiupdate)
+####col:insert(docs, continue_on_error)
+####col:delete(selector, SingleRemove)
+####col:kill_cursors(cursorIDs)
+####col:query(query, returnfields, numberToSkip, numberToReturn, options)
+####col:getmore(cursorID, [numberToReturn], [offset_i])
  - cursorID is an 8 byte string representing the cursor to getmore on
  - numberToReturn is the number of results to return, defaults to -1
  - offset_i is the number to start numbering the returned table from, defaults to 1
-
-####cursor = db:find ( collection , query , returnfields )
+####cursor = col:find(query, returnfields)
 
 ###Cursor objects
 ####index , item = cursor:next ( )
@@ -97,12 +101,16 @@ Notes
 
 TL;DR
 ---------------------------
-		local mongol = require "mongol"
-		local conn = mongol ( ) -- Connect to localhost:27017
-		local db = conn:new_db_handle ( "mydatabase" )
+            local mongo = require "resty.mongol"
 
-		assert ( db:auth ( "username" , "password" ) )
+            local db = conn:new_db_handle ( "test" )
+            col = db:get_col("test")
 
-		for i , v in db:find ( "mycollection" , { foo = "bar" } ):pairs() do
-			print ( v )
-		end
+            r = col:find({name="dog"})
+
+            for i , v in r:pairs() do
+                if v["name"] then
+                    ngx.say(v["name"])
+                end
+            end
+
