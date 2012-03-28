@@ -1,3 +1,12 @@
+local mod_name = (...):match ( "^(.*)%..-$" )
+
+local ll = require ( mod_name .. ".ll" )
+local num_to_le_uint = ll.num_to_le_uint
+local num_to_le_int = ll.num_to_le_int
+local le_uint_to_num = ll.le_uint_to_num
+local le_bpeek = ll.le_bpeek
+
+
 local getmetatable , setmetatable = getmetatable , setmetatable
 local pairs = pairs
 local next = next
@@ -55,7 +64,44 @@ local function attachpairs_start ( o , k )
 	return o
 end
 
+local opcodes = {
+	REPLY = 1 ;
+	MSG = 1000 ;
+	UPDATE = 2001 ;
+	INSERT = 2002 ;
+	QUERY = 2004 ;
+	GET_MORE = 2005 ;
+	DELETE = 2006 ;
+	KILL_CURSORS = 2007 ;
+}
+
+local function compose_msg ( requestID , reponseTo , opcode , message )
+	return num_to_le_uint ( #message + 16 ) .. requestID .. reponseTo .. opcode .. message
+end
+
+local function full_collection_name ( self , collection )
+	local db = assert ( self.db , "Not current in a database" )
+	return  db .. "." .. collection .. "\0"
+end
+
+local id = 0
+local function docmd ( conn , opcode , message ,  reponseTo )
+	id = id + 1
+	local requestID = num_to_le_uint ( id )
+	reponseTo = reponseTo or "\255\255\255\255"
+	opcode = num_to_le_uint ( assert ( opcodes [ opcode ] ) )
+
+	local m = compose_msg ( requestID , reponseTo , opcode , message )
+	local sent = assert ( conn.sock:send ( m ) )
+
+	return id , sent
+end
+
 return {
 	pairs_start = pairs_start ;
 	attachpairs_start = attachpairs_start ;
+	opcodes = opcodes;
+	compose_msg = compose_msg;
+	full_collection_name = full_collection_name;
+	docmd = docmd;
 }
