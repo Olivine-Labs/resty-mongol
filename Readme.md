@@ -109,6 +109,7 @@ Returns a collection object for more operations.
 ####cursor = col:find(query, returnfields)
 
 ###Cursor objects
+--------------------
 ####index , item = cursor:next ( )
 Returns the next item and advances the cursor
 

@@ -24,24 +24,27 @@ local object_id_mt = {
 	__eq = function ( a , b ) return a.id == b.id end ;
 }
 
-local machineid
-if hasposix then
-	machineid = posix.uname ( "%n" )
-else
-	machineid = assert ( io.popen ( "uname -n" ) ):read ( "*l" )
+local function get_machineid()
+    local machineid
+    if hasposix then
+    	machineid = posix.uname("%n")
+    else
+    	machineid = assert(io.popen("uname -n")):read("*l")
+    end
+    machineid = md5.sum(machineid):sub(1, 3)
+    return machineid
 end
-machineid = md5.sum ( machineid ):sub ( 1 , 3 )
 
-local function get_pid ()
+local function get_pid()
     local pid
     if hasposix then
-    	pid = posix.getpid ( ).pid
+    	pid = posix.getpid().pid
     else
     	--pid = assert ( tonumber ( assert ( io.popen ( "ps -o ppid= -p $$") ):read ( "*a" ) ) )
-        local p = io.popen ( "ps -o ppid= -p $$"):read ( "*a" )
-    	pid = assert ( tonumber ( p ) ) 
+        local p = io.popen("ps -o ppid= -p $$"):read("*a")
+    	pid = assert(tonumber(p)) 
     end
-    pid = num_to_le_uint ( pid , 2 )
+    pid = num_to_le_uint(pid, 2)
     return pid
 end
 
@@ -49,7 +52,7 @@ local inc = 0
 local function generate_id ( )
 	inc = inc + 1
 	-- "A BSON ObjectID is a 12-byte value consisting of a 4-byte timestamp (seconds since epoch), a 3-byte machine id, a 2-byte process id, and a 3-byte counter. Note that the timestamp and counter fields must be stored big endian unlike the rest of BSON"
-	return num_to_be_uint ( os.time ( ) , 4 ) .. machineid .. get_pid() .. num_to_be_uint ( inc , 3 )
+	return num_to_be_uint ( os.time ( ) , 4 ) .. get_machineid .. get_pid() .. num_to_be_uint ( inc , 3 )
 end
 
 local function new_object_id ( str )
