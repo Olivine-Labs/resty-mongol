@@ -12,23 +12,14 @@ local opcodes = misc.opcodes
 local compose_msg = misc.compose_msg
 local full_collection_name = misc.full_collection_name
 
-local socket = ngx.socket.tcp()
-
-local md5 = require "md5"
-local md5hex = md5.sumhexa
-
 local ll = require ( mod_name .. ".ll" )
 local num_to_le_uint = ll.num_to_le_uint
 local num_to_le_int = ll.num_to_le_int
 local le_uint_to_num = ll.le_uint_to_num
 local le_bpeek = ll.le_bpeek
 
-local getlib = require ( mod_name .. ".get" )
-local get_from_string = getlib.get_from_string
-
 local bson = require ( mod_name .. ".bson" )
 local to_bson = bson.to_bson
-local from_bson = bson.from_bson
 
 local new_cursor = require ( mod_name .. ".cursor" )
 

@@ -23,7 +23,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: insert
+=== TEST 1: insert use colmt
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -38,12 +38,48 @@ __DATA__
             --    return
             --end
 
-            local db = conn:new_db_handle ( "test" )
+            local db = conn:new_db_handle("test")
             col = db:get_col("test")
 
             col:delete({name="dog"})
             col:insert({{name="dog"}})
             r = col:find({name="dog"})
+
+            for i , v in r:pairs() do
+                if v["name"] then
+                    ngx.say(v["name"])
+                end
+            end
+        ';
+    }
+--- request
+GET /t
+--- response_body
+dog
+--- no_error_log
+[error]
+
+
+=== TEST 1: insert use dbmt
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            local conn = mongo("10.6.2.51")
+
+            conn:set_timeout(1000) -- 1 sec
+            --local ok, err = conn:set_keepalive() -- 1 sec
+            --if not ok then
+            --    ngx.say("failed to set keepalive: ", err)
+            --    return
+            --end
+            local db = conn:new_db_handle("test")
+            local col = "test" 
+
+            db:delete(col, {name="dog"})
+            db:insert(col, {{name="dog"}})
+            r = db:find(col, {name="dog"})
 
             for i , v in r:pairs() do
                 if v["name"] then
