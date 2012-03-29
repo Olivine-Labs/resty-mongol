@@ -72,7 +72,8 @@ or `nil , errmsg , return_document , responseFlags` on failure;
 where `responseFlags` is a table containing the fields `CursorNotFound, QueryFailure, ShardConfigStale, AwaitCapable`.
 
 ####bool, hosts = conn:ismaster()
-Returns a boolean indicating if this is the master server and a table of other hosts this server is replicating with.
+Returns a boolean indicating if this is the master server and a table of other hosts this server is replicating with
+or `nil, err` on failure.
 
 ####newconn = conn:getprimary ( [already_checked] )
 Returns a new connection object that is connected to the primary server
