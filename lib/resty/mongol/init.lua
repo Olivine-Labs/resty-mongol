@@ -1,3 +1,5 @@
+module("resty.mongol", package.seeall)
+
 local mod_name = (...)
 
 local misc = require ( mod_name .. ".misc" )
@@ -16,7 +18,7 @@ local strbyte , strchar = string.byte , string.char
 local strsub = string.sub
 local t_insert , t_concat = table.insert , table.concat
 
-local socket = ngx.socket.tcp()
+local socket = ngx.socket.tcp
 
 local md5 = require "md5"
 local md5hex = md5.sumhexa
@@ -34,42 +36,21 @@ local bson = require ( mod_name .. ".bson" )
 local to_bson = bson.to_bson
 local from_bson = bson.from_bson
 
-local new_cursor = require ( mod_name .. ".cursor" )
-
 local connmethods = { }
 local connmt = { __index = connmethods }
 
-local colmt = require ( mod_name .. ".colmt" )
 local dbmt = require ( mod_name .. ".dbmt" )
 
 
-local function connect ( host , port )
-	host = host or "localhost"
-	port = port or 27017
-
-	--local sock = socket.connect ( host , port )
-	local sock = socket
-	ok,err = sock:connect ( host , port )
-    if not ok then
-        return false
-    end
-
-	return setmetatable ( {
-			host = host ;
-			port = port ;
-			sock = sock ;
-		} , connmt )
-end
-
-function connmethods:cmd ( db , q , collection )
+function connmethods:cmd(db, q, collection)
 	collection = collection or "$cmd"
 	local h = self:new_db_handle ( db )
 	local c_id , r , t = h:query ( collection , q )
 
 	if t.QueryFailure then
-		error ( "Query Failure" )
+		return nil, "Query Failure"
 	elseif not r[1] then
-		error ( "No results returned" )
+		return nil, "No results returned"
 	elseif r[1].ok == 0 then -- Failure
 		return nil , r[1].errmsg , r[1] , t
 	else
@@ -77,9 +58,12 @@ function connmethods:cmd ( db , q , collection )
 	end
 end
 
-function connmethods:ismaster ( )
-	local r = assert ( self:cmd ( "admin" , { ismaster = true } ) )
-	return r.ismaster , r.hosts
+function connmethods:ismaster()
+	local r, err = self:cmd("admin", {ismaster = true}) 
+    if not r then
+        return nil, err
+    end
+	return r.ismaster, r.hosts
 end
 
 local function parse_host ( str )
@@ -108,17 +92,20 @@ function connmethods:getprimary ( searched )
 	return nil , "No master server found"
 end
 
-function connmethods:databases ( )
+function connmethods:databases()
 	local r = assert ( self:cmd ( "admin" , { listDatabases = true } ) )
 	return r.databases
 end
 
-function connmethods:shutdown ( )
-	pcall ( self.cmd , self , "admin" , { shutdown = true } )
+function connmethods:shutdown()
+	pcall(self.cmd, self, "admin", {shutdown = true})
 end
 
 function connmethods:new_db_handle ( db )
-	assert ( db , "No database provided" )
+    if not db then
+        return nil
+    end
+
 	return setmetatable ( {
 			conn = self ;
 			db = db ;
@@ -143,6 +130,40 @@ function connmethods:set_keepalive(...)
     return sock:setkeepalive(...)
 end
 
+function connmethods:get_reused_times()
+    local sock = self.sock
+    if not sock then
+        return nil, "not initialized"
+    end
+
+    return sock:getreusedtimes()
+end
+
+function connmethods:connect(host, port)
+	self.host = host or self.host
+	self.port = port or self.port
+    local sock = self.sock
+
+	return sock:connect(self.host, self.port)
+end
+
+function connmethods:close()
+    local sock = self.sock
+    if not sock then
+        return nil, "not initialized"
+    end
+
+    return sock:close()
+end
+
 connmt.__call = connmethods.new_db_handle
 
-return connect
+function new(self)
+	return setmetatable ( {
+			sock = socket();
+            host = "localhost";
+            port = 27017;
+		} , connmt )
+end
+
+--return new

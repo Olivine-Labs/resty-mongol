@@ -29,14 +29,13 @@ __DATA__
     location /t {
         content_by_lua '
             local mongo = require "resty.mongol"
-            local conn = mongo("10.6.2.51")
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+            ok, err = conn:connect("10.6.2.51")
 
-            conn:set_timeout(1000) -- 1 sec
-            --local ok, err = conn:set_keepalive() -- 1 sec
-            --if not ok then
-            --    ngx.say("failed to set keepalive: ", err)
-            --    return
-            --end
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
 
             local db = conn:new_db_handle("test")
             col = db:get_col("test")
@@ -50,6 +49,7 @@ __DATA__
                     ngx.say(v["name"])
                 end
             end
+            conn:close()
         ';
     }
 --- request
@@ -60,20 +60,20 @@ dog
 [error]
 
 
-=== TEST 1: insert use dbmt
+=== TEST 2: insert use dbmt
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local mongo = require "resty.mongol"
-            local conn = mongo("10.6.2.51")
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+            ok, err = conn:connect("10.6.2.51")
 
-            conn:set_timeout(1000) -- 1 sec
-            --local ok, err = conn:set_keepalive() -- 1 sec
-            --if not ok then
-            --    ngx.say("failed to set keepalive: ", err)
-            --    return
-            --end
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
             local db = conn:new_db_handle("test")
             local col = "test" 
 
@@ -86,12 +86,104 @@ dog
                     ngx.say(v["name"])
                 end
             end
+            conn:close()
         ';
     }
 --- request
 GET /t
 --- response_body
 dog
+--- no_error_log
+[error]
+
+=== TEST 3: socket failed
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(1000) 
+            ok, err = conn:connect("10.6.2.51", 27016)
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+        ';
+    }
+--- request
+GET /t
+--- response_body
+connect failed: connection refused
+--- error_log
+[error]
+
+=== TEST 4: socket reuse
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(1000) 
+
+            ok, err = conn:connect("10.6.2.51")
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+            ngx.say(conn:get_reused_times())
+
+            ok, err = conn:set_keepalive()
+            if not ok then
+                ngx.say("set keepalive failed: "..err)
+            end
+
+            ok, err = conn:connect("10.6.2.51")
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+            ngx.say(conn:get_reused_times())
+        ';
+    }
+--- request
+GET /t
+--- response_body
+0
+1
+--- no_error_log
+[error]
+
+=== TEST 5: is master
+--- http_config eval: $::HttpConfig
+--- ONLY
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(1000) 
+
+            ok, err = conn:connect("10.6.2.51")
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            r, h = conn:ismaster()
+            if not r then
+                ngx.say("query master failed: "..h)
+            end
+
+            ngx.say(r)
+            for i,v in pairs(h) do
+                ngx.say(v)
+            end
+            conn:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body_like
+true
 --- no_error_log
 [error]
 

@@ -38,17 +38,40 @@ it takes a host (default localhost) and a port (default 27017);
 it returns a connection object.
 
 		mongol = require "resty.mongol"
-		conn = mongol() -- Connect to localhost:27017
+		conn = mongol:new() -- return a conntion object
 
 ###Connection objects have server wide methods.
 ------------
 
-####conn:cmd ( database_name , query , [collection] )
+####ok,err = conn:connect(host, port)
+Default host and port is: `localhost` and `27017`.
+
+####ok,err = conn:settimeout(msec)
+Sets socket connecting, reading, writing timeout value, unit is milliseconds.
+
+In case of success, returns 1. In case of errors, returns nil with a string describing the error.
+
+####ok,err = conn:set_keepalive(msec, pool_size)
+Keeps the socket alive for `msec` by ngx_lua cosocket.
+
+In case of success, returns 1. In case of errors, returns nil with a string describing the error.
+
+####times,err = conn:get_reused_times()
+Returns the socket reused times.
+
+In case of success, returns times. In case of errors, returns nil with a string describing the error.
+
+####ok,err = conn:close()
+Closes the connection.
+
+In case of success, returns 1. In case of errors, returns nil with a string describing the error.
+
+####conn:cmd(database_name, query, [collection])
 Returns the document
 or `nil , errmsg , return_document , responseFlags` on failure;
 where `responseFlags` is a table containing the fields `CursorNotFound, QueryFailure, ShardConfigStale, AwaitCapable`.
 
-####bool , hosts = conn:ismaster ( )
+####bool, hosts = conn:ismaster()
 Returns a boolean indicating if this is the master server and a table of other hosts this server is replicating with.
 
 ####newconn = conn:getprimary ( [already_checked] )
@@ -65,11 +88,11 @@ Returns a table describing databases on the server.
 		databases.empty: boolean
 		databases.sizeOnDisk: number
 
-####conn:shutdown ( )
+####conn:shutdown()
 Shutsdown the server. Returns nothing.
 
-####db = conn:new_db_handle ( database_name )
-Returns a database object
+####db = conn:new_db_handle(database_name)
+Returns a database object, or nil.
 
 ###Database objects perform actions on a database
 ------------
