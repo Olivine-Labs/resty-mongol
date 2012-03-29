@@ -102,19 +102,18 @@ Returns a database object, or nil.
 ####db:dropDatabase()
 ####db:add_user(username, password)
 ####db:auth(username, password)
-####db:count(collection, query)
-####db:drop(collection)
-####db:update(collection, selector, update, upsert, multiupdate)
-####db:insert(collection, docs, continue_on_error)
-####db:delete(collection, selector, SingleRemove)
-####db:kill_cursors (collection, cursorIDs)
-####db:query(collection, query, returnfields, numberToSkip, numberToReturn, options)
-####db:getmore(collection, cursorID, [numberToReturn], [offset_i])
- - cursorID is an 8 byte string representing the cursor to getmore on
- - numberToReturn is the number of results to return, defaults to -1
- - offset_i is the number to start numbering the returned table from, defaults to 1
 ####col = db:get_col(collection_name)
 Returns a collection object for more operations.
+####Referer to the collection methods rather than below methods:
+-- db:count(collection, query)
+db:drop(collection)
+db:update(collection, selector, update, upsert, multiupdate)
+db:insert(collection, docs, continue_on_error)
+db:delete(collection, selector, SingleRemove)
+db:kill_cursors (collection, cursorIDs)
+db:query(collection, query, returnfields, numberToSkip, numberToReturn, options)
+db:getmore(collection, cursorID, [numberToReturn], [offset_i]) --
+
 
 ###Collection objects
 ------------
