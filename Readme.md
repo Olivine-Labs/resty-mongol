@@ -99,11 +99,17 @@ Returns a database object, or nil.
 ------------
 
 ####db:list()
+
 ####db:dropDatabase()
+
 ####db:add_user(username, password)
-####db:auth(username, password)
+
+####bool = db:auth(username, password)
+Returns true or false for authenticating.
+
 ####col = db:get_col(collection_name)
 Returns a collection object for more operations.
+
 ####Referer to the collection methods rather than below methods:
 -- db:count(collection, query)
 db:drop(collection)
@@ -119,20 +125,29 @@ db:getmore(collection, cursorID, [numberToReturn], [offset_i]) --
 ------------
 
 ####col:count(query)
+
 ####col:drop()
+
 ####col:update(selector, update, upsert, multiupdate)
+
 ####col:insert(docs, continue_on_error)
+
 ####col:delete(selector, SingleRemove)
+
 ####col:kill_cursors(cursorIDs)
+
 ####col:query(query, returnfields, numberToSkip, numberToReturn, options)
+
 ####col:getmore(cursorID, [numberToReturn], [offset_i])
  - cursorID is an 8 byte string representing the cursor to getmore on
  - numberToReturn is the number of results to return, defaults to -1
  - offset_i is the number to start numbering the returned table from, defaults to 1
+
 ####cursor = col:find(query, returnfields)
 
 ###Cursor objects
 --------------------
+
 ####index , item = cursor:next ( )
 Returns the next item and advances the cursor
 
@@ -166,3 +181,20 @@ Example
                 end
             end
 
+
+For Testing
+--------------------
+#####mongo config:
+        config = {_id: 'testset', members: [
+                          {_id: 0, host: '10.6.2.51:27017'},
+                          {_id: 1, host: '10.6.2.51:27018'},
+                          {_id: 2, host: '10.6.2.51:27019'}]
+                }
+
+#####start-mongo.sh:
+        nohup bin/mongod --dbpath=/data/57cbd36d-5b70-4888-8537-bea71119363e/mongodb --oplogSize 10 --rest --replSet testset --port 27017 --keyFile key.file &
+        nohup bin/mongod --dbpath=/data/0a9419ae-4ec3-48c2-ad8d-df68a09aed13/mongodb --oplogSize 10 --rest --replSet testset --port 27018 --keyFile key.file &
+        nohup bin/mongod --dbpath=/data/8ee9efc0-a854-4c45-8893-7b4cb9ed0e5f/mongodb --oplogSize 10 --rest --replSet testset --port 27019 --keyFile key.file &
+
+#####mongo user:
+        > db.addUser("admin","admin")

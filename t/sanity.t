@@ -38,6 +38,7 @@ __DATA__
             end
 
             local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
             col = db:get_col("test")
 
             col:delete({name="dog"})
@@ -75,6 +76,7 @@ dog
             end
 
             local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
             local col = "test" 
 
             db:delete(col, {name="dog"})
@@ -257,6 +259,32 @@ false
 GET /t
 --- response_body
 get primary
+--- no_error_log
+[error]
+
+=== TEST 8: auth
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(1000) 
+
+            ok, err = conn:connect("10.6.2.51")
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            ngx.say(r)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
 --- no_error_log
 [error]
 
