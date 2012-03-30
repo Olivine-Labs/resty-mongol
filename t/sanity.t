@@ -262,7 +262,7 @@ get primary
 --- no_error_log
 [error]
 
-=== TEST 8: auth
+=== TEST 8: db auth
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -285,6 +285,94 @@ get primary
 GET /t
 --- response_body
 true
+--- no_error_log
+[error]
+
+=== TEST 9: col count
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(1000) 
+
+            ok, err = conn:connect("10.6.2.51")
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then
+                ngx.say("auth failed")
+                ngx.exit(ngx.OK)
+            end
+            col = db:get_col("test")
+
+            col:delete({})
+            col:insert({{name="sheep"}})
+            local n = col:count({name="sheep"})
+            ngx.say(n)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+1
+--- no_error_log
+[error]
+
+=== TEST 10: col update and with $inc
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(1000) 
+
+            ok, err = conn:connect("10.6.2.51")
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then
+                ngx.say("auth failed")
+                ngx.exit(ngx.OK)
+            end
+
+            col = db:get_col("test")
+            col:delete({})
+
+            col:insert({{name="dog"}})
+            local n = col:update({name="dog"},{name="cat"})
+            r = col:find({name="cat"})
+            for i , v in r:pairs() do
+                if v["name"] then
+                    ngx.say(v["name"])
+                end
+            end
+
+            col:insert({{name="dog",n=1}})
+            local update = {}
+            update["$inc"] = {n=1}
+            local n = col:update({name="dog"},update)
+            r = col:find({name="dog"})
+            for i , v in r:pairs() do
+                if v["n"] then
+                    ngx.say(v["n"])
+                end
+            end
+        ';
+    }
+--- request
+GET /t
+--- response_body
+cat
+2
 --- no_error_log
 [error]
 

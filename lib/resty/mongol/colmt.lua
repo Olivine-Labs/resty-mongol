@@ -115,15 +115,15 @@ function colmethods:getmore(cursorID, numberToReturn, offset_i)
 end
 
 function colmethods:count(query)
-    local r = assert(self.conn:cmd(self.db, attachpairs_start({
+    local r = assert(self.db_obj:cmd(attachpairs_start({
             count = self.col;
             query = query or { } ;
         } , "count" ) ) )
     return r.n
 end
 
-function colmethods:drop(collection)
-    return assert(self.conn:cmd(self.db, {drop = self.col} ) )
+function colmethods:drop()
+    return assert(self.db_obj:cmd({drop = self.col} ) )
 end
 
 function colmethods:find(query, returnfields)

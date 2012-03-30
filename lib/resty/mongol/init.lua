@@ -14,24 +14,9 @@ local connmt = { __index = connmethods }
 local dbmt = require ( mod_name .. ".dbmt" )
 
 
-function connmethods:cmd(db, q, collection)
-    collection = collection or "$cmd"
-    local h = self:new_db_handle ( db )
-    local c_id , r , t = h:query ( collection , q )
-
-    if t.QueryFailure then
-        return nil, "Query Failure"
-    elseif not r[1] then
-        return nil, "No results returned"
-    elseif r[1].ok == 0 then -- Failure
-        return nil , r[1].errmsg , r[1] , t
-    else
-        return r[1]
-    end
-end
-
 function connmethods:ismaster()
-    local r, err = self:cmd("admin", {ismaster = true}) 
+    local db = self:new_db_handle("admin")
+    local r, err = db:cmd({ismaster = true}) 
     if not r then
         return nil, err
     end
@@ -47,7 +32,8 @@ end
 function connmethods:getprimary ( searched )
     searched = searched or { [ self.host .. ":" .. self.port ] = true }
 
-    local r, err = self:cmd( "admin" , { ismaster = true } ) 
+    local db = self:new_db_handle("admin")
+    local r, err = db:cmd({ ismaster = true })
     if not r then
         return nil, "query admin failed: "..err
     elseif r.ismaster then return self 
@@ -73,12 +59,14 @@ function connmethods:getprimary ( searched )
 end
 
 function connmethods:databases()
-    local r = assert ( self:cmd ( "admin" , { listDatabases = true } ) )
+    local db = self:new_db_handle("admin")
+    local r = assert ( db:cmd({ listDatabases = true } ))
     return r.databases
 end
 
 function connmethods:shutdown()
-    pcall(self.cmd, self, "admin", {shutdown = true})
+    local db = self:new_db_handle("admin")
+    db:cmd({ shutdown = true } )
 end
 
 function connmethods:new_db_handle ( db )

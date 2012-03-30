@@ -111,24 +111,26 @@ Returns true or false for authenticating.
 Returns a collection object for more operations.
 
 ####Referer to the collection methods rather than below methods:
--- db:count(collection, query)
-db:drop(collection)
-db:update(collection, selector, update, upsert, multiupdate)
-db:insert(collection, docs, continue_on_error)
-db:delete(collection, selector, SingleRemove)
-db:kill_cursors (collection, cursorIDs)
-db:query(collection, query, returnfields, numberToSkip, numberToReturn, options)
-db:getmore(collection, cursorID, [numberToReturn], [offset_i]) --
+
+        db:count(collection, query)
+        db:drop(collection)
+        db:update(collection, selector, update, upsert, multiupdate)
+        db:insert(collection, docs, continue_on_error)
+        db:delete(collection, selector, SingleRemove)
+        db:kill_cursors (collection, cursorIDs)
+        db:query(collection, query, returnfields, numberToSkip, numberToReturn, options)
+        db:getmore(collection, cursorID, [numberToReturn], [offset_i]) 
 
 
 ###Collection objects
 ------------
 
-####col:count(query)
+####n = col:count(query)
 
 ####col:drop()
 
 ####col:update(selector, update, upsert, multiupdate)
+Default value of upsert and multiupdate are false.
 
 ####col:insert(docs, continue_on_error)
 
@@ -159,6 +161,10 @@ Notes
 ---------------------------
  - collections are string containing any value except "\0"
  - database_name are strings containing any character except "." and "\0"
+
+Known Issues
+---------------------------
+1. Auth bson message has reduntant value.
 
 Example
 ---------------------------

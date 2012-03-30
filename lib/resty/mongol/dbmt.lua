@@ -17,17 +17,7 @@ local strsub = string.sub
 local t_insert , t_concat = table.insert , table.concat
 
 local md5 = require "md5"
-local md5hex 
-if not md5 then
-    resty_md5 = require "resty.md5"
-    md5hex = function(str)
-        md5 = resty_md5:new()
-        md5:update(str)
-        return md5:final()
-    end
-else
-    md5hex = md5.sumhexa
-end
+local md5hex = md5.sumhexa
 
 local ll = require ( mod_name .. ".ll" )
 local num_to_le_uint = ll.num_to_le_uint
@@ -49,6 +39,22 @@ local colmt = require ( mod_name .. ".colmt" )
 
 local dbmethods = { }
 local dbmt = { __index = dbmethods }
+
+function dbmethods:cmd(q)
+    collection = "$cmd"
+    
+    local c_id , r , t = self:query( collection , q )
+
+    if t.QueryFailure then
+        return nil, "Query Failure"
+    elseif not r[1] then
+        return nil, "No results returned"
+    elseif r[1].ok == 0 then -- Failure
+        return nil , r[1].errmsg , r[1] , t
+    else
+        return r[1]
+    end
+end
 
 function dbmethods:update ( collection , selector , update , upsert , multiupdate )
     local flags = 2^0*( upsert and 1 or 0 ) + 2^1*( multiupdate and 1 or 0 )
@@ -174,7 +180,7 @@ end
 dbmethods.find = new_cursor
 
 function dbmethods:count ( collection , query )
-    local r = assert ( self.conn:cmd ( self.db , attachpairs_start ( {
+    local r = assert ( self:cmd(attachpairs_start ( {
             count = collection ;
             query = query or { } ;
         } , "count" ) ) )
@@ -186,11 +192,11 @@ function dbmethods:listcollections ( )
 end
 
 function dbmethods:drop ( collection )
-    return assert ( self.conn:cmd ( self.db , { drop = collection } ) )
+    return assert ( self:cmd({ drop = collection }))
 end
 
 function dbmethods:dropDatabase ( )
-    return assert ( self.conn:cmd ( self.db , { dropDatabase = true } ) )
+    return assert ( self:cmd({ dropDatabase = true }))
 end
 
 local function pass_digest ( username , password )
@@ -203,10 +209,10 @@ function dbmethods:add_user ( username , password )
 end
 
 function dbmethods:auth ( username , password )
-    local r = assert ( self.conn:cmd ( self.db , { getnonce = true } ) )
+    local r = assert ( self:cmd({ getnonce = true }))
     local digest = md5hex ( r.nonce .. username .. pass_digest ( username , password ) )
 
-    return self.conn:cmd ( self.db , attachpairs_start ({
+    return self:cmd(attachpairs_start ({
             authenticate = true ;
             user = username ;
             nonce = r.nonce ;
@@ -226,5 +232,6 @@ function dbmethods:get_col(collection)
             col = collection;
         } , colmt )
 end
+
 
 return dbmt
