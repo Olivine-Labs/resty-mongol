@@ -104,22 +104,11 @@ Returns a database object, or nil.
 
 ####db:add_user(username, password)
 
-####bool = db:auth(username, password)
-Returns true or false for authenticating.
+####ok, err = db:auth(username, password)
+Returns something or error message.
 
 ####col = db:get_col(collection_name)
 Returns a collection object for more operations.
-
-####Referer to the collection methods rather than below methods:
-
-        db:count(collection, query)
-        db:drop(collection)
-        db:update(collection, selector, update, upsert, multiupdate)
-        db:insert(collection, docs, continue_on_error)
-        db:delete(collection, selector, SingleRemove)
-        db:kill_cursors (collection, cursorIDs)
-        db:query(collection, query, returnfields, numberToSkip, numberToReturn, options)
-        db:getmore(collection, cursorID, [numberToReturn], [offset_i]) 
 
 
 ###Collection objects

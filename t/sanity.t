@@ -39,6 +39,7 @@ __DATA__
 
             local db = conn:new_db_handle("test")
             local r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
             col = db:get_col("test")
 
             col:delete({name="dog"})
@@ -60,41 +61,32 @@ dog
 --- no_error_log
 [error]
 
-
-=== TEST 2: insert use dbmt
+=== TEST 2: db auth failed
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local mongo = require "resty.mongol"
             conn = mongo:new()
-            conn:set_timeout(10000) 
-            ok, err = conn:connect("10.6.2.51")
+            conn:set_timeout(1000) 
 
+            ok, err = conn:connect("10.6.2.51")
             if not ok then
                 ngx.say("connect failed: "..err)
             end
 
             local db = conn:new_db_handle("test")
-            local r = db:auth("admin", "admin")
-            local col = "test" 
-
-            db:delete(col, {name="dog"})
-            db:insert(col, {{name="dog"}})
-            r = db:find(col, {name="dog"})
-
-            for i , v in r:pairs() do
-                if v["name"] then
-                    ngx.say(v["name"])
-                end
+            local r,err = db:auth("admin", "pass")
+            if not r then ngx.say(err) 
+            else
+                ngx.say("ok")
             end
-            conn:close()
         ';
     }
 --- request
 GET /t
 --- response_body
-dog
+auth fails
 --- no_error_log
 [error]
 
@@ -277,14 +269,15 @@ get primary
             end
 
             local db = conn:new_db_handle("test")
-            local r = db:auth("admin", "admin")
-            ngx.say(r)
+            local r,err = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+            ngx.say("ok")
         ';
     }
 --- request
 GET /t
 --- response_body
-true
+ok
 --- no_error_log
 [error]
 

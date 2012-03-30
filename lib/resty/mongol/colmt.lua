@@ -11,6 +11,7 @@ local docmd = misc.docmd
 local opcodes = misc.opcodes
 local compose_msg = misc.compose_msg
 local full_collection_name = misc.full_collection_name
+local handle_reply = misc.handle_reply
 
 local ll = require ( mod_name .. ".ll" )
 local num_to_le_uint = ll.num_to_le_uint
@@ -127,7 +128,7 @@ function colmethods:drop()
 end
 
 function colmethods:find(query, returnfields)
-    return new_cursor(self.db_obj, self.col, query, returnfields)
+    return new_cursor(self, query, returnfields)
 end
 
 return colmt
