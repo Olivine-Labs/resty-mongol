@@ -186,15 +186,23 @@ function colmethods:getmore(cursorID, numberToReturn, offset_i)
 end
 
 function colmethods:count(query)
-    local r = assert(self.db_obj:cmd(attachpairs_start({
+    local r, err = self.db_obj:cmd(attachpairs_start({
             count = self.col;
             query = query or { } ;
-        } , "count" ) ) )
+        } , "count" ) )
+        
+    if not r then
+        return nil, err
+    end
     return r.n
 end
 
 function colmethods:drop()
-    return assert(self.db_obj:cmd({drop = self.col} ) )
+    local r, err = self.db_obj:cmd({drop = self.col})
+    if not r then
+        return nil, err
+    end
+    return 1
 end
 
 function colmethods:find(query, returnfields, limit_each_query)

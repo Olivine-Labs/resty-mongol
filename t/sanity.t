@@ -79,7 +79,7 @@ dog
             local r,err = db:auth("admin", "pass")
             if not r then ngx.say(err) 
             else
-                ngx.say("ok")
+                ngx.say(r)
             end
         ';
     }
@@ -271,13 +271,13 @@ get primary
             local db = conn:new_db_handle("test")
             local r,err = db:auth("admin", "admin")
             if not r then ngx.say("auth failed") end
-            ngx.say("ok")
+            ngx.say(r)
         ';
     }
 --- request
 GET /t
 --- response_body
-ok
+1
 --- no_error_log
 [error]
 
@@ -305,7 +305,10 @@ ok
 
             col:delete({name="sheep"})
             col:insert({{name="sheep"}})
-            local n = col:count({name="sheep"})
+            local n, err = col:count({name="sheep"})
+            if not n then
+                ngx.say("count fail: "..err)
+            end
             ngx.say(n)
         ';
     }
@@ -469,6 +472,53 @@ nil
 nil
 3
 nil
+--- no_error_log
+[error]
+
+=== TEST 13: col drop
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(1000) 
+
+            ok, err = conn:connect("10.6.2.51")
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then
+                ngx.say("auth failed")
+                ngx.exit(ngx.OK)
+            end
+
+            col = db:get_col("test1")
+            col:insert({{name="puppy", n=i, m="foo"}})
+            local r,err = col:drop()
+
+            if not r then
+                ngx.say(err)
+            else
+                ngx.say(r)
+            end
+
+            local r ,err = col:drop()
+            if not r then
+                ngx.say(err)
+            else
+                ngx.say(r)
+            end
+        ';
+    }
+--- request
+GET /t
+--- response_body
+1
+ns not found
 --- no_error_log
 [error]
 

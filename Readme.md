@@ -105,7 +105,7 @@ Returns a database object, or nil.
 ####db:add_user(username, password)
 
 ####ok, err = db:auth(username, password)
-Returns something or error message.
+Returns 1 in case of success, or nil with error message.
 
 ####col = db:get_col(collection_name)
 Returns a collection object for more operations.
@@ -116,7 +116,8 @@ Returns a collection object for more operations.
 
 ####n = col:count(query)
 
-####col:drop()
+####ok, err = col:drop()
+Returns 1 in case of success, or nil with error message.
 
 ####col:update(selector, update, upsert, multiupdate)
 Default value of upsert and multiupdate are false.
@@ -129,6 +130,7 @@ Default value of upsert and multiupdate are false.
 
 ####cursor = col:find(query, returnfields, limit_each_query)
 Returns a cursor object does not excute query yet.
+
  - returnfields is the fields to return, eg: `{n=0}` or `{n=1}`
  - limit_each_query is the max result number for each query of the cursor to avoid fetch a large result in memory, default to 0(no limit)
 

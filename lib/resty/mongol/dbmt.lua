@@ -4,7 +4,7 @@ local misc = require ( mod_name .. ".misc" )
 local attachpairs_start = misc.attachpairs_start
 
 local setmetatable = setmetatable
-local assert , pcall = assert , pcall
+local pcall = pcall
 
 local md5 = require "md5"
 local md5hex = md5.sumhexa
@@ -37,7 +37,11 @@ function dbmethods:listcollections ( )
 end
 
 function dbmethods:dropDatabase ( )
-    return assert ( self:cmd({ dropDatabase = true }))
+    local r, err = self:cmd({ dropDatabase = true })
+    if not r then
+        return nil, err
+    end
+    return 1
 end
 
 local function pass_digest ( username , password )
@@ -50,16 +54,23 @@ function dbmethods:add_user ( username , password )
 end
 
 function dbmethods:auth(username, password)
-    local r = assert ( self:cmd({ getnonce = true }))
+    local r, err = self:cmd({ getnonce = true })
+    if not r then
+        return nil, err
+    end
  
     local digest = md5hex ( r.nonce .. username .. pass_digest ( username , password ) )
 
-    return self:cmd(attachpairs_start({
+    r, err = self:cmd(attachpairs_start({
             authenticate = true ;
             user = username ;
             nonce = r.nonce ;
             key = digest ;
          } , "authenticate" ) )
+    if not r then
+        return nil, err
+    end
+    return 1
 end
 
 function dbmethods:get_col(collection)
