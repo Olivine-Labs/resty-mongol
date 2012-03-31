@@ -23,7 +23,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: insert use colmt
+=== TEST 1: col insert 
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -43,7 +43,7 @@ __DATA__
             col = db:get_col("test")
 
             col:delete({name="dog"})
-            col:insert({{name="dog"}})
+            col:insert({{name="dog",n=10,m=20}})
             r = col:find({name="dog"})
 
             for i , v in r:pairs() do
@@ -303,7 +303,7 @@ ok
             end
             col = db:get_col("test")
 
-            col:delete({})
+            col:delete({name="sheep"})
             col:insert({{name="sheep"}})
             local n = col:count({name="sheep"})
             ngx.say(n)
@@ -366,6 +366,109 @@ GET /t
 --- response_body
 cat
 2
+--- no_error_log
+[error]
+
+=== TEST 11: col find with limit(getmore)
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(1000) 
+
+            ok, err = conn:connect("10.6.2.51")
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then
+                ngx.say("auth failed")
+                ngx.exit(ngx.OK)
+            end
+
+            col = db:get_col("test")
+            col:delete({name="puppy"})
+
+            for i = 1, 10 do
+                col:insert({{name="puppy"}})
+            end
+
+            r = col:find({name="puppy"}, nil, 4)
+            local j = 0
+            for i , v in r:pairs() do
+                j = j +1
+            end
+
+            ngx.say(j)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+10
+--- no_error_log
+[error]
+
+=== TEST 12: col find with field
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(1000) 
+
+            ok, err = conn:connect("10.6.2.51")
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then
+                ngx.say("auth failed")
+                ngx.exit(ngx.OK)
+            end
+
+            col = db:get_col("test")
+            col:delete({name="puppy"})
+
+            for i = 1, 3 do
+                col:insert({{name="puppy", n=i, m="foo"}})
+            end
+
+            r = col:find({name="puppy"}, {n=0}, 4)
+            for i , v in r:pairs() do
+                ngx.say(v["n"])
+                ngx.say(v["name"])
+            end
+
+            r = col:find({name="puppy"}, {n=1}, 4)
+            for i , v in r:pairs() do
+                ngx.say(v["n"])
+                ngx.say(v["name"])
+            end
+        ';
+    }
+--- request
+GET /t
+--- response_body
+nil
+puppy
+nil
+puppy
+nil
+puppy
+1
+nil
+2
+nil
+3
+nil
 --- no_error_log
 [error]
 

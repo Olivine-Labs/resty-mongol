@@ -7,11 +7,6 @@ local ipairs , pairs = ipairs , pairs
 local t_insert , t_concat = table.insert , table.concat
 
 local attachpairs_start = misc.attachpairs_start
-local docmd = misc.docmd
-local opcodes = misc.opcodes
-local compose_msg = misc.compose_msg
-local full_collection_name = misc.full_collection_name
-local handle_reply = misc.handle_reply
 
 local ll = require ( mod_name .. ".ll" )
 local num_to_le_uint = ll.num_to_le_uint
@@ -19,7 +14,11 @@ local num_to_le_int = ll.num_to_le_int
 local le_uint_to_num = ll.le_uint_to_num
 local le_bpeek = ll.le_bpeek
 
+local getlib = require ( mod_name .. ".get" )
+local get_from_string = getlib.get_from_string
+
 local bson = require ( mod_name .. ".bson" )
+local from_bson = bson.from_bson
 local to_bson = bson.to_bson
 
 local new_cursor = require ( mod_name .. ".cursor" )
@@ -28,6 +27,77 @@ local colmethods = { }
 local colmt = { __index = colmethods }
 
 
+local opcodes = {
+    REPLY = 1 ;
+    MSG = 1000 ;
+    UPDATE = 2001 ;
+    INSERT = 2002 ;
+    QUERY = 2004 ;
+    GET_MORE = 2005 ;
+    DELETE = 2006 ;
+    KILL_CURSORS = 2007 ;
+}
+
+local function compose_msg ( requestID , reponseTo , opcode , message )
+    return num_to_le_uint ( #message + 16 ) .. requestID .. reponseTo .. opcode .. message
+end
+
+local function full_collection_name ( self , collection )
+    local db = assert ( self.db , "Not current in a database" )
+    return  db .. "." .. collection .. "\0"
+end
+
+local id = 0
+local function docmd ( conn , opcode , message ,  reponseTo )
+    id = id + 1
+    local requestID = num_to_le_uint ( id )
+    reponseTo = reponseTo or "\255\255\255\255"
+    opcode = num_to_le_uint ( assert ( opcodes [ opcode ] ) )
+
+    local m = compose_msg ( requestID , reponseTo , opcode , message )
+    local sent = assert ( conn.sock:send ( m ) )
+
+    return id , sent
+end
+
+local function read_msg_header ( sock )
+    local header = assert ( sock:receive ( 16 ) )
+
+    local length = le_uint_to_num ( header , 1 , 4 )
+    local requestID = le_uint_to_num ( header , 5 , 8 )
+    local reponseTo = le_uint_to_num ( header , 9 , 12 )
+    local opcode = le_uint_to_num ( header , 13 , 16 )
+
+    return length , requestID , reponseTo , opcode
+end
+
+local function handle_reply ( conn , req_id , offset_i )
+    offset_i = offset_i  or 0
+
+    local r_len , r_req_id , r_res_id , opcode = read_msg_header ( conn.sock )
+    assert ( req_id == r_res_id )
+    assert ( opcode == opcodes.REPLY )
+    local data = assert ( conn.sock:receive ( r_len - 16 ) )
+    local get = get_from_string ( data )
+
+    local responseFlags = get ( 4 )
+    local cursorid = get ( 8 )
+
+    local t = { }
+    t.startingFrom = le_uint_to_num ( get ( 4 ) )
+    t.numberReturned = le_uint_to_num ( get ( 4 ) )
+    t.CursorNotFound = le_bpeek ( responseFlags , 0 )
+    t.QueryFailure = le_bpeek ( responseFlags , 1 )
+    t.ShardConfigStale = le_bpeek ( responseFlags , 2 )
+    t.AwaitCapable = le_bpeek ( responseFlags , 3 )
+
+    local r = { }
+    for i = 1 , t.numberReturned do
+        r [ i + offset_i ] = from_bson ( get )
+    end
+
+    return cursorid , r , t
+end
 
 function colmethods:insert(docs, continue_on_error)
     if #docs < 1 then
@@ -127,8 +197,8 @@ function colmethods:drop()
     return assert(self.db_obj:cmd({drop = self.col} ) )
 end
 
-function colmethods:find(query, returnfields)
-    return new_cursor(self, query, returnfields)
+function colmethods:find(query, returnfields, limit_each_query)
+    return new_cursor(self, query, returnfields, limit_each_query)
 end
 
 return colmt

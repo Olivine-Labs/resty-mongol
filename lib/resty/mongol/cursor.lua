@@ -8,7 +8,7 @@ local strformat = string.format
 local cursor_methods = { }
 local cursor_mt = { __index = cursor_methods }
 
-local function new_cursor(col, query, returnfields)
+local function new_cursor(col, query, returnfields, limit_each_query)
     return setmetatable ( {
             col = col ;
             query = query ;
@@ -18,7 +18,8 @@ local function new_cursor(col, query, returnfields)
             results = { } ;
 
             done = false ;
-            i = 0 ;
+            i = 0;
+            limit = limit_each_query;
         } , cursor_mt )
 end
 
@@ -34,7 +35,7 @@ cursor_mt.__tostring = function ( ob )
     return "CursorId(" .. t_concat ( t ) .. ")"
 end
 
-function cursor_methods:next ( )
+function cursor_methods:next()
     local v = self.results [ self.i + 1 ]
     if v ~= nil then
         self.i = self.i + 1
@@ -46,12 +47,12 @@ function cursor_methods:next ( )
 
     local t
     if not self.id then
-        self.id , self.results , t = self.col:query(self.query, self.returnfields, self.i, 0)
+        self.id , self.results , t = self.col:query(self.query, self.returnfields, self.i, self.limit)
         if self.id == "\0\0\0\0\0\0\0\0" then
             self.done = true
         end
     else
-        self.id , self.results , t = self.col:getmore(self.id, 0, self.i)
+        self.id , self.results , t = self.col:getmore(self.id, self.limit, self.i)
         if self.id == "\0\0\0\0\0\0\0\0" then
             self.done = true
         elseif t.CursorNotFound then

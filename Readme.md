@@ -125,24 +125,27 @@ Default value of upsert and multiupdate are false.
 
 ####col:delete(selector, SingleRemove)
 
-####col:kill_cursors(cursorIDs)
-
 ####col:query(query, returnfields, numberToSkip, numberToReturn, options)
+
+####cursor = col:find(query, returnfields, limit_each_query)
+Returns a cursor object does not excute query yet.
+ - returnfields is the fields to return, eg: `{n=0}` or `{n=1}`
+ - limit_each_query is the max result number for each query of the cursor to avoid fetch a large result in memory, default to 0(no limit)
 
 ####col:getmore(cursorID, [numberToReturn], [offset_i])
  - cursorID is an 8 byte string representing the cursor to getmore on
  - numberToReturn is the number of results to return, defaults to -1
  - offset_i is the number to start numbering the returned table from, defaults to 1
 
-####cursor = col:find(query, returnfields)
+####col:kill_cursors(cursorIDs)
 
 ###Cursor objects
 --------------------
 
-####index , item = cursor:next ( )
+####index, item = cursor:next()
 Returns the next item and advances the cursor
 
-####cursor:pairs ( )
+####cursor:pairs()
 A handy wrapper around cursor:next() that works in a generic for loop:
 		for index , item in cursor:pairs() do
 
@@ -177,7 +180,7 @@ Example
             end
 
 
-For Testing
+For Test Case
 --------------------
 #####mongo config:
         config = {_id: 'testset', members: [
