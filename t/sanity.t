@@ -340,23 +340,27 @@ GET /t
             conn = mongo:new()
             conn:set_timeout(1000) 
 
-            ok, err = conn:connect("10.6.2.51")
-            if not ok then
-                ngx.say("connect failed: "..err)
-            end
+            local r, err = conn:connect("10.6.2.51")
+            if not r then ngx.say("connect failed: "..err) end
 
             local db = conn:new_db_handle("test")
-            local r = db:auth("admin", "admin")
-            if not r then
-                ngx.say("auth failed")
-                ngx.exit(ngx.OK)
-            end
+            local col = db:get_col("test")
+            r,err = col:update({name="dog"},{name="cat"}, nil, nil, true)
+            if not r then ngx.say("update failed: "..err) end
 
-            col = db:get_col("test")
-            col:delete({})
+            r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
 
-            col:insert({{name="dog"}})
-            local n = col:update({name="dog"},{name="cat"})
+            r,err = col:delete({})
+            if not r then ngx.say("delete failed: "..err) end
+
+            r,err = col:insert({{name="dog"}})
+            if not r then ngx.say("insert failed: "..err) end
+
+            r,err = col:update({name="dog"},{name="cat"}, nil, nil, true)
+            if not r then ngx.say("update failed: "..err) end
+            ngx.say(r)
+
             r = col:find({name="cat"})
             for i , v in r:pairs() do
                 if v["name"] then
@@ -364,22 +368,46 @@ GET /t
                 end
             end
 
+            r,err = col:update({name="sheep"},{name="cat"}, 1, nil, true)
+            if not r then ngx.say("update failed: "..err) end
+            ngx.say(r)
+
+            r,err = col:update({name="sheep"},{name="cat"}, nil, nil, true)
+            if not r then ngx.say("update failed: "..err) end
+            ngx.say(r)
+
+
             col:insert({{name="dog",n=1}})
+
             local update = {}
             update["$inc"] = {n=1}
-            local n = col:update({name="dog"},update)
+            r,err = col:update({name="dog"},update, nil, nil, true)
+            if not r then ngx.say("update failed: "..err) end
+            ngx.say(r)
+
             r = col:find({name="dog"})
             for i , v in r:pairs() do
                 if v["n"] then
                     ngx.say(v["n"])
                 end
             end
+
+            col:insert({{name="dog",n=10}})
+            r,err = col:update({name="dog"}, update, nil, 1, true)
+            if not r then ngx.say("update failed: "..err) end
+            ngx.say(r)
         ';
     }
 --- request
 GET /t
 --- response_body
+update failed: unauthorized
+1
 cat
+1
+0
+1
+2
 2
 --- no_error_log
 [error]

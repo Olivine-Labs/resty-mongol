@@ -119,13 +119,16 @@ Returns a collection object for more operations.
 ####ok, err = col:drop()
 Returns 1 in case of success, or nil with error message.
 
-####col:update(selector, update, upsert, multiupdate)
-Default value of upsert and multiupdate are false.
+####n, err = col:update(selector, update, upsert, multiupdate, safe)
+
+ - upsert, if set to `1`, the database will insert the supplied object into the collection if no matching document is found, default to `0`.
+ - multiupdate, if set to `1`, the database will update all matching objects in the collection. Otherwise only updates first matching doc, default to `0`. Multi update only works with $ operators.
+ - safe can be a boolean or integer, defaults to `0`. If `1`, the program will issue a cmd `getlasterror` to server to query the result. If `false`, return value `n` would always be `-1`
 
 ####n, err = col:insert(docs, continue_on_error, safe)
 Returns 0 for success, or nil with error message.
 
- - continue_on_error. If set, the database will not stop processing a bulk insert if one fails (eg due to duplicate IDs).
+ - continue_on_error, if set, the database will not stop processing a bulk insert if one fails (eg due to duplicate IDs).
  - safe can be a boolean or integer, defaults to `0`. If `1`, the program will issue a cmd `getlasterror` to server to query the result. If `false`, return value `n` would always be `-1`
 
 ####n, err = col:delete(selector, singleRemove, safe)

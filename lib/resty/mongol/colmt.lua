@@ -115,7 +115,7 @@ function colmethods:insert(docs, continue_on_error, safe)
 
     local m = num_to_le_uint(flags)..full_collection_name(self, self.col)
                 ..t_concat(t)
-    id, send = docmd(self.conn, "INSERT", m)
+    local id, send = docmd(self.conn, "INSERT", m)
     if sent == 0 then
         return nil, "send message failed"   
     end
@@ -134,15 +134,34 @@ function colmethods:insert(docs, continue_on_error, safe)
     else return -1 end
 end
 
-function colmethods:update(selector, update, upsert, multiupdate)
-    local flags = 2^0*( upsert and 1 or 0 ) + 2^1*( multiupdate and 1 or 0 )
+function colmethods:update(selector, update, upsert, multiupdate, safe)
+    safe = safe or 0
+    upsert = upsert or 0
+    multiupdate = multiupdate or 0
+    local flags = 2^0*upsert + 2^1*multiupdate
 
     selector = to_bson(selector)
     update = to_bson(update)
 
     local m = "\0\0\0\0" .. full_collection_name(self, self.col) 
                 .. num_to_le_uint ( flags ) .. selector .. update
-    return docmd(self.conn, "UPDATE", m)
+    local id, send = docmd(self.conn, "UPDATE", m)
+    if sent == 0 then
+        return nil, "send message failed"   
+    end
+
+    if safe ~= 0 then
+        local r, err = self.db_obj:cmd({getlasterror=1})
+        if not r then
+            return nil, err
+        end
+    
+        if r["err"] then
+            return nil, r["err"]
+        else
+            return r["n"]
+        end
+    else return -1 end
 end
 
 function colmethods:delete(selector, single_remove, safe)
