@@ -122,11 +122,22 @@ Returns 1 in case of success, or nil with error message.
 ####col:update(selector, update, upsert, multiupdate)
 Default value of upsert and multiupdate are false.
 
-####col:insert(docs, continue_on_error)
+####n, err = col:insert(docs, continue_on_error, safe)
+Returns 0 for success, or nil with error message.
 
-####col:delete(selector, SingleRemove)
+ - continue_on_error. If set, the database will not stop processing a bulk insert if one fails (eg due to duplicate IDs).
+ - safe can be a boolean or integer, defaults to `0`. If `1`, the program will issue a cmd `getlasterror` to server to query the result. If `false`, return value `n` would always be `-1`
 
-####col:query(query, returnfields, numberToSkip, numberToReturn, options)
+####n, err = col:delete(selector, singleRemove, safe)
+Returns number of rows been deleted, or nil with error message.
+
+ - singleRemove if set to 1, the database will remove only the first matching document in the collection. Otherwise all matching documents will be removed. Default to `0`
+ - safe can be a boolean or integer, defaults to `0`. If `1`, the program will issue a cmd `getlasterror` to server to query the result. If `false`, return value `n` would always be `-1`
+
+####r = col:find_one(query, returnfields)
+Returns a single element array, or nil.
+
+ - returnfields is the fields to return, eg: `{n=0}` or `{n=1}`
 
 ####cursor = col:find(query, returnfields, limit_each_query)
 Returns a cursor object does not excute query yet.

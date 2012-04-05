@@ -99,12 +99,14 @@ local function handle_reply ( conn , req_id , offset_i )
     return cursorid , r , t
 end
 
-function colmethods:insert(docs, continue_on_error)
+function colmethods:insert(docs, continue_on_error, safe)
     if #docs < 1 then
         return nil, "docs needed"
     end
 
-    local flags = 2^0*( continue_on_error and 1 or 0 )
+    safe = safe or 0
+    continue_on_error = continue_on_error or 0
+    local flags = 2^0*continue_on_error
 
     local t = { }
     for i , v in ipairs(docs) do
@@ -113,7 +115,23 @@ function colmethods:insert(docs, continue_on_error)
 
     local m = num_to_le_uint(flags)..full_collection_name(self, self.col)
                 ..t_concat(t)
-    return docmd(self.conn, "INSERT", m)
+    id, send = docmd(self.conn, "INSERT", m)
+    if sent == 0 then
+        return nil, "send message failed"   
+    end
+
+    if safe ~= 0 then
+        local r, err = self.db_obj:cmd({getlasterror=1})
+        if not r then
+            return nil, err
+        end
+    
+        if r["err"] then
+            return nil, r["err"]
+        else
+            return r["n"]
+        end
+    else return -1 end
 end
 
 function colmethods:update(selector, update, upsert, multiupdate)
@@ -127,10 +145,10 @@ function colmethods:update(selector, update, upsert, multiupdate)
     return docmd(self.conn, "UPDATE", m)
 end
 
-function colmethods:delete(selector, SingleRemove, safe)
-    SingleRemove = SingleRemove or 0
+function colmethods:delete(selector, single_remove, safe)
     safe = safe or 0
-    local flags = 2^0*SingleRemove 
+    single_remove = single_remove or 0
+    local flags = 2^0*single_remove
 
     selector = to_bson(selector)
 

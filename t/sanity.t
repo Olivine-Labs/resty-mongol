@@ -38,12 +38,22 @@ __DATA__
             end
 
             local db = conn:new_db_handle("test")
-            local r = db:auth("admin", "admin")
-            if not r then ngx.say("auth failed") end
-            col = db:get_col("test")
+            local col = db:get_col("test")
 
-            col:delete({name="dog"})
-            col:insert({{name="dog",n=10,m=20}})
+            local r,err = col:insert({{name="dog",n=10,m=20}}, nil, true)
+            if not r then ngx.say("insert failed: "..err) end
+
+            r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+
+            r, err = col:delete({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            r, err = col:insert({{name="dog",n=10,m=20}, {name="cat"}}, 
+                        nil, true)
+            if not r then ngx.say("insert failed: "..err) end
+            ngx.say(r)
+
             r = col:find({name="dog"})
 
             for i , v in r:pairs() do
@@ -57,6 +67,8 @@ __DATA__
 --- request
 GET /t
 --- response_body
+insert failed: unauthorized
+0
 dog
 --- no_error_log
 [error]
@@ -496,7 +508,7 @@ nil
                 ngx.exit(ngx.OK)
             end
 
-            col = db:get_col("test1")
+            col = db:get_col("test")
             col:insert({{name="puppy", n=i, m="foo"}})
             local r,err = col:drop()
 
@@ -519,6 +531,137 @@ GET /t
 --- response_body
 1
 ns not found
+--- no_error_log
+[error]
+
+=== TEST 14: col find_one
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+
+            local ok, err = conn:connect("10.6.2.51",27017)
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then
+                ngx.say("auth failed")
+                ngx.exit(ngx.HTTP_OK)
+            end
+
+            local col = db:get_col("test")
+            r,err = col:delete({})
+            if not r then
+                ngx.say("delete failed: "..err)
+                ngx.exit(ngx.HTTP_OK)
+            end
+
+            col:insert({{name="puppy", n=1, m="foo"}})
+            col:insert({{name="puppy", n=2, m="foo"}})
+
+            r = col:find_one({name="puppy"}, {n=1})
+            if not r then
+                ngx.say("not found")
+            end
+            ngx.say(r["n"]) 
+
+            r = col:find_one({name="puppy"}, {n=0})
+            if not r then
+                ngx.say("not found")
+            end
+            ngx.say(r["n"]) 
+
+            r = col:find_one({name="p"})
+            if not r then
+                ngx.say("not found")
+            end
+        ';
+    }
+--- request
+GET /t
+--- response_body
+1
+nil
+not found
+--- no_error_log
+[error]
+
+=== TEST 15: col delete safe 
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+
+            local ok, err = conn:connect("10.6.2.51")
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+
+            local col = db:get_col("test")
+            r,err = col:delete({}, nil, 1)
+            if not r then
+                ngx.say("delete failed: "..err)
+            end
+
+            local r = db:auth("admin", "admin")
+            if not r then
+                ngx.say("auth failed")
+                ngx.exit(ngx.HTTP_OK)
+            end
+
+            r,err = col:delete({})
+            col:insert({{name="puppy", n=1, m="foo"}})
+            col:insert({{name="puppy", n=1, m="foo"}})
+            col:insert({{name="puppy", n=2, m="foo"}})
+            r = col:delete({name="puppy"}, 0, 1)
+
+            if not r then
+                ngx.say("delete failed: "..err)
+                ngx.exit(ngx.HTTP_OK)
+            end
+            ngx.say(r)
+
+            col:insert({{name="puppy", n=1, m="foo"}})
+            col:insert({{name="puppy", n=1, m="foo"}})
+            col:insert({{name="puppy", n=2, m="foo"}})
+            r = col:delete({name="puppy"}, 1, true)
+
+            if not r then
+                ngx.say("delete failed: "..err)
+                ngx.exit(ngx.HTTP_OK)
+            end
+            ngx.say(r)
+
+            col:insert({{name="puppy", n=1, m="foo"}})
+            col:insert({{name="puppy", n=1, m="foo"}})
+            col:insert({{name="puppy", n=2, m="foo"}})
+            r = col:delete({name="puppy"}, 1, false)
+
+            if not r then
+                ngx.say("delete failed: "..err)
+                ngx.exit(ngx.HTTP_OK)
+            end
+            ngx.say(r)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+delete failed: unauthorized
+3
+1
+-1
 --- no_error_log
 [error]
 
