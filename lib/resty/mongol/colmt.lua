@@ -127,15 +127,33 @@ function colmethods:update(selector, update, upsert, multiupdate)
     return docmd(self.conn, "UPDATE", m)
 end
 
-function colmethods:delete(selector, SingleRemove)
-    local flags = 2^0*( SingleRemove and 1 or 0 )
+function colmethods:delete(selector, SingleRemove, safe)
+    SingleRemove = SingleRemove or 0
+    safe = safe or 0
+    local flags = 2^0*SingleRemove 
 
     selector = to_bson(selector)
 
     local m = "\0\0\0\0" .. full_collection_name(self, self.col) 
                 .. num_to_le_uint(flags) .. selector
 
-    return docmd(self.conn, "DELETE", m)
+    local id, sent = docmd(self.conn, "DELETE", m)
+    if sent == 0 then
+        return nil, "send message failed"   
+    end
+    
+    if safe ~= 0 then
+        local r, err = self.db_obj:cmd({getlasterror=1})
+        if not r then
+            return nil, err
+        end
+    
+        if r["err"] then
+            return nil, r["err"]
+        else
+            return r["n"]
+        end
+    else return -1 end
 end
 
 function colmethods:kill_cursors(cursorIDs)
@@ -207,6 +225,14 @@ end
 
 function colmethods:find(query, returnfields, limit_each_query)
     return new_cursor(self, query, returnfields, limit_each_query)
+end
+
+function colmethods:find_one(query, returnfields)
+    local id, results, t = self:query(query, returnfields, 0, 1)
+    if id == "\0\0\0\0\0\0\0\0" then
+        return results
+    end
+    return nil
 end
 
 return colmt
