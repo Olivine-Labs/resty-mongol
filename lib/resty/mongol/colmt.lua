@@ -229,8 +229,8 @@ end
 
 function colmethods:find_one(query, returnfields)
     local id, results, t = self:query(query, returnfields, 0, 1)
-    if id == "\0\0\0\0\0\0\0\0" then
-        return results
+    if id == "\0\0\0\0\0\0\0\0" and results[1] then
+        return results[1]
     end
     return nil
 end
