@@ -165,6 +165,15 @@ Returns the next item and advances the cursor
 A handy wrapper around cursor:next() that works in a generic for loop:
 		for index , item in cursor:pairs() do
 
+###Object id
+-------------------
+
+####objid:tostring()
+####objid:get_ts()
+####objid:get_pid()
+####objid:get_hostname()
+####objid:get_inc()
+
 Notes
 ---------------------------
  - collections are string containing any value except "\0"
