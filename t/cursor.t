@@ -92,3 +92,166 @@ GET /t
 --- no_error_log
 [error]
 
+=== TEST 2: cursor sort
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+            local ok, err = conn:connect("10.6.2.51")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+            local col = db:get_col("test")
+
+            r, err = col:delete({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            local i, j
+            local t = {}
+            for i = 1,1000 do
+                j = 100 - i
+                table.insert(t, {name="dog",n=i,m=j})
+            end
+            r, err = col:insert(t, nil, true)
+            if not r then ngx.say("insert failed: "..err) end
+
+            r = col:find({name="dog"}, nil, 5)
+            local ret,err = r:sort({n=-1})
+            if not ret then ngx.say("sort failed: "..err) 
+                ngx.exit(ngx.HTTP_OK) end
+            for i , v in pairs(ret) do
+                ngx.say(v["n"])
+            end
+
+            r = col:find({name="dog"}, nil, 5)
+            ret,err = r:sort({n=1})
+            if not ret then ngx.say("sort failed: "..err) 
+                ngx.exit(ngx.HTTP_OK) end
+            for i , v in pairs(ret) do
+                ngx.say(v["n"])
+            end
+
+            r = col:find({name="dog"}, nil, 5)
+            r:limit(3)
+            ret,err = r:sort({n=-1})
+            if not ret then ngx.say("sort failed: "..err) 
+                ngx.exit(ngx.HTTP_OK) end
+            for i , v in pairs(ret) do
+                ngx.say(v["n"])
+            end
+
+            r = col:find({name="dog"}, nil, 3)
+            r:limit(5)
+            ret,err = r:sort({n=1})
+            if not ret then ngx.say("sort failed: "..err) 
+                ngx.exit(ngx.HTTP_OK) end
+            for i , v in pairs(ret) do
+                ngx.say(v["n"])
+            end
+
+            conn:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+953
+952
+951
+950
+949
+949
+950
+951
+952
+953
+951
+950
+949
+949
+950
+951
+--- no_error_log
+[error]
+
+=== TEST 3: cursor sort after next
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+            local ok, err = conn:connect("10.6.2.51")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+            local col = db:get_col("test")
+
+            r, err = col:delete({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            local i, j
+            local t = {}
+            for i = 1,1000 do
+                j = 100 - i
+                table.insert(t, {name="dog",n=i,m=j})
+            end
+            r, err = col:insert(t, nil, true)
+            if not r then ngx.say("insert failed: "..err) end
+
+            r = col:find({name="dog"}, nil, 5)
+            r:limit(5)
+            for k,v in r:pairs() do
+                ngx.say(v["n"])
+                break
+            end
+
+            local ret,err = r:sort({n=1})
+            if not ret then ngx.say("sort failed: "..err) 
+                ngx.exit(ngx.HTTP_OK) end
+            for i , v in pairs(ret) do
+                ngx.say(v["n"])
+            end
+
+            for k,v in r:pairs() do
+                ngx.say(v["n"])
+            end
+            local ret,err = r:sort({n=-1})
+            if not ret then ngx.say("sort failed: "..err) 
+                ngx.exit(ngx.HTTP_OK) end
+            for i , v in pairs(ret) do
+                ngx.say(v["n"])
+            end
+            conn:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+949
+950
+951
+952
+953
+950
+951
+952
+953
+sort failed: sort must be an array
+--- no_error_log
+[error]
+

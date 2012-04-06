@@ -169,8 +169,11 @@ A handy wrapper around cursor:next() that works in a generic for loop:
 ####cursor:limit(n)
 Limits the number of results returned.
 
-####cursor:sort(fields)
-Sorts the results by given fields.
+####result = cursor:sort(field, size)
+Returns an array with size `size` sorted by given field. 
+
+ - field is an array by which to sort, and this array size _MUST be 1_. The element in the array has as key the field name, and as value either `1` for ascending sort, or `-1` for descending sort. 
+ - num is the temp array size for sorting, default to `10000`.
 
 ###Object id
 -------------------

@@ -41,6 +41,55 @@ function cursor_methods:limit(n)
     self.limit_n = n
 end
 
+--todo
+--function cursor_methods:skip(n)
+
+function cursor_methods:sort(field, size)
+    size = size or 10000
+    if size < 2 then return nil, "number of object must > 1" end
+    if not field then return nil, "field should not be nil" end
+
+    local key, asc
+    for k,v in pairs(field) do
+        key = k
+        asc = v
+        break
+    end
+    if asc ~= 1 and asc ~= -1 then return nil, "order must be 1 or -1" end
+
+    local sort_f = 
+            function(a, b) 
+                if not a and not b then return false end
+                if not a then return true end
+                if not b then return false end
+                if asc == 1 then
+                    return a[key] < b[key]
+                else
+                    return a[key] > b[key]
+                end
+            end
+
+    if #self.results > self.i then
+        table.sort(self.results, sort_f)
+    elseif #self.results == 0 and self.i == 0 then
+        if self.num_each == 0 and self.limit_n ~= 0 then
+            size = self.limit_n
+        elseif self.num_each ~= 0 and self.limit_n == 0 then
+            size = self.num_each
+        else
+            size = (self.num_each < self.limit_n 
+                        and self.num_each) or self.limit_n
+        end
+        
+        self.id, self.results, t = self.col:query(self.query, 
+                        self.returnfields, self.i, size)
+        table.sort(self.results, sort_f)
+    else
+        return nil, "sort must be an array"
+    end
+    return self.results
+end
+
 function cursor_methods:next()
     if self.limit_n > 0 and self.i >= self.limit_n then return nil end
 

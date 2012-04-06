@@ -449,7 +449,6 @@ cat
             ngx.say(j)
         ';
     }
---- ONLY
 --- request
 GET /t
 --- response_body
