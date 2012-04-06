@@ -142,11 +142,11 @@ Returns a single element array, or nil.
 
  - returnfields is the fields to return, eg: `{n=0}` or `{n=1}`
 
-####cursor = col:find(query, returnfields, limit_each_query)
-Returns a cursor object does not excute query yet.
+####cursor = col:find(query, returnfields, num_each_query)
+Returns a cursor object for excuting query.
 
  - returnfields is the fields to return, eg: `{n=0}` or `{n=1}`
- - limit_each_query is the max result number for each query of the cursor to avoid fetch a large result in memory, default to 0(no limit)
+ - num_each_query is the max result number for each query of the cursor to avoid fetch a large result in memory, must larger than `1`, `0` for no limit, default to `100`.
 
 ####col:getmore(cursorID, [numberToReturn], [offset_i])
  - cursorID is an 8 byte string representing the cursor to getmore on
@@ -159,11 +159,18 @@ Returns a cursor object does not excute query yet.
 --------------------
 
 ####index, item = cursor:next()
-Returns the next item and advances the cursor
+Returns the next item and advances the cursor.
 
 ####cursor:pairs()
 A handy wrapper around cursor:next() that works in a generic for loop:
-		for index , item in cursor:pairs() do
+
+		for index, item in cursor:pairs() do
+
+####cursor:limit(n)
+Limits the number of results returned.
+
+####cursor:sort(fields)
+Sorts the results by given fields.
 
 ###Object id
 -------------------

@@ -15,6 +15,7 @@ our $HttpConfig = qq{
 
 $ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
 $ENV{TEST_NGINX_MONGO_PORT} ||= 27017;
+$ENV{TEST_NGINX_TIMEOUT} = 10000;
 
 no_long_string();
 #no_diff();
@@ -23,7 +24,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: object id
+=== TEST 1: cursor limit
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -45,28 +46,49 @@ __DATA__
             r, err = col:delete({}, nil, true)
             if not r then ngx.say("delete failed: "..err) end
 
-            r, err = col:insert({{name="dog",n=10,m=20}, {name="cat"}}, 
-                        nil, true)
+            local i, j
+            local t = {}
+            for i = 1,10 do
+                j = 100 - i
+                table.insert(t, {name="dog",n=i,m=j})
+            end
+            r, err = col:insert(t, nil, true)
             if not r then ngx.say("insert failed: "..err) end
-            ngx.say(r)
 
             r = col:find({name="dog"})
-
+            r:limit(3)
             for i , v in r:pairs() do
-                ngx.say(v["_id"]:tostring())
-                ngx.say(v["_id"]:get_ts())
-                ngx.say(v["_id"]:get_hostname())
-                ngx.say(v["_id"]:get_pid())
-                ngx.say(v["_id"]:get_inc())
-                ngx.say(v["name"])
+                ngx.say(v["n"])
+            end
+
+            r = col:find({name="dog"}, nil, 0)
+            r:limit(3)
+            for i , v in r:pairs() do
+                ngx.say(v["n"])
+            end
+
+            r = col:find({name="dog"}, nil, 2)
+            r:limit(5)
+            for i , v in r:pairs() do
+                ngx.say(v["n"])
             end
             conn:close()
         ';
     }
 --- request
 GET /t
---- response_body_like
-dog
+--- response_body
+1
+2
+3
+1
+2
+3
+1
+2
+3
+4
+5
 --- no_error_log
 [error]
 

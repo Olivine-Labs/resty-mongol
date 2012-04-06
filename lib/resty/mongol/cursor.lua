@@ -8,7 +8,7 @@ local strformat = string.format
 local cursor_methods = { }
 local cursor_mt = { __index = cursor_methods }
 
-local function new_cursor(col, query, returnfields, limit_each_query)
+local function new_cursor(col, query, returnfields, num_each_query)
     return setmetatable ( {
             col = col ;
             query = query ;
@@ -19,7 +19,8 @@ local function new_cursor(col, query, returnfields, limit_each_query)
 
             done = false ;
             i = 0;
-            limit = limit_each_query;
+            limit_n = 0;
+            num_each = num_each_query;
         } , cursor_mt )
 end
 
@@ -30,12 +31,19 @@ end
 cursor_mt.__tostring = function ( ob )
     local t = { }
     for i = 1 , 8 do
-        t_insert ( t , strformat ( "%02x" , strbyte ( ob.id , i , i ) ) )
+        t_insert(t, strformat("%02x", strbyte(ob.id, i, i)))
     end
     return "CursorId(" .. t_concat ( t ) .. ")"
 end
 
+function cursor_methods:limit(n)
+    assert(n)
+    self.limit_n = n
+end
+
 function cursor_methods:next()
+    if self.limit_n > 0 and self.i >= self.limit_n then return nil end
+
     local v = self.results [ self.i + 1 ]
     if v ~= nil then
         self.i = self.i + 1
@@ -47,12 +55,14 @@ function cursor_methods:next()
 
     local t
     if not self.id then
-        self.id , self.results , t = self.col:query(self.query, self.returnfields, self.i, self.limit)
+        self.id, self.results, t = self.col:query(self.query, 
+                        self.returnfields, self.i, self.num_each)
         if self.id == "\0\0\0\0\0\0\0\0" then
             self.done = true
         end
     else
-        self.id , self.results , t = self.col:getmore(self.id, self.limit, self.i)
+        self.id, self.results, t = self.col:getmore(self.id, 
+                        self.num_each, self.i)
         if self.id == "\0\0\0\0\0\0\0\0" then
             self.done = true
         elseif t.CursorNotFound then
@@ -62,8 +72,8 @@ function cursor_methods:next()
     return self:next ( )
 end
 
-function cursor_methods:pairs ( )
-    return self.next , self
+function cursor_methods:pairs( )
+    return self.next, self
 end
 
 return new_cursor

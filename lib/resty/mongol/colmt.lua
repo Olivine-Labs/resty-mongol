@@ -260,8 +260,12 @@ function colmethods:drop()
     return 1
 end
 
-function colmethods:find(query, returnfields, limit_each_query)
-    return new_cursor(self, query, returnfields, limit_each_query)
+function colmethods:find(query, returnfields, num_each_query)
+    num_each_query = num_each_query or 100
+    if num_each_query == 1 then
+        return nil, "num_each_query must larger than 1"
+    end
+    return new_cursor(self, query, returnfields, num_each_query)
 end
 
 function colmethods:find_one(query, returnfields)
