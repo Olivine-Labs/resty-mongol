@@ -184,6 +184,7 @@ GET /t
 
 === TEST 3: cursor sort after next
 --- http_config eval: $::HttpConfig
+--- ONLY
 --- config
     location /t {
         content_by_lua '
@@ -206,12 +207,14 @@ GET /t
 
             local i, j
             local t = {}
-            for i = 1,1000 do
+            for i = 1,50 do
                 j = 100 - i
-                table.insert(t, {name="dog",n=i,m=j})
+                r, err = col:insert({{name="dog",n=i,m=j}}, nil, true)
+                if not r then ngx.say("insert failed: "..err) end
+                --table.insert(t, {name="dog",n=i,m=j})
             end
-            r, err = col:insert(t, nil, true)
-            if not r then ngx.say("insert failed: "..err) end
+            --r, err = col:insert(t, nil, true)
+            --if not r then ngx.say("insert failed: "..err) end
 
             r = col:find({name="dog"}, nil, 5)
             r:limit(5)

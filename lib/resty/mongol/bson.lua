@@ -15,6 +15,7 @@ local ll = require ( mod_name .. ".ll" )
 local le_uint_to_num = ll.le_uint_to_num
 local le_int_to_num = ll.le_int_to_num
 local num_to_le_uint = ll.num_to_le_uint
+local num_to_le_int = ll.num_to_le_int
 local from_double = ll.from_double
 local to_double = ll.to_double
 
@@ -24,6 +25,8 @@ local read_terminated_string = getlib.read_terminated_string
 local obid = require ( mod_name .. ".object_id" )
 local new_object_id = obid.new
 local object_id_mt = obid.metatable
+local binary_mt = {}
+local utc_date = {}
 
 
 local function read_document ( get , numerical )
@@ -62,7 +65,7 @@ local function read_document ( get , numerical )
 			else
 				error ( f:byte ( ) )
 			end
-		elseif op == "9" then -- unix time
+		elseif op == "9" then -- UTC datetime milliseconds
 			v = le_uint_to_num ( get ( 8 ) , 1 , 8 )
 		elseif op == "\10" then -- Null
 			v = nil
@@ -100,6 +103,14 @@ local function read_document ( get , numerical )
 	return t
 end
 
+local function get_utc_date(v)
+    return setmetatable({v = v}, utc_date)
+end
+
+local function get_bin_data(v)
+    return setmetatable({v = v, st = "\0"}, binary_mt)
+end
+
 local function from_bson ( get )
 	local t = read_document ( get , false )
 	return t
@@ -124,6 +135,11 @@ local function pack ( k , v )
 		end
 	elseif mt == object_id_mt then
 		return "\7" .. k .. "\0" .. v.id
+	elseif mt == utc_date then
+		return "\9" .. k .. "\0" .. num_to_le_int(v.v, 8)
+	elseif mt == binary_mt then
+		return "\5" .. k .. "\0" .. num_to_le_uint(string.len(v.v)) .. 
+               v.st .. v.v
 	elseif ot == "table" then
 		local doc , array = to_bson ( v )
 		if array then
@@ -193,4 +209,6 @@ end
 return {
 	from_bson = from_bson ;
 	to_bson = to_bson ;
+    get_bin_data = get_bin_data;
+    get_utc_date = get_utc_date;
 }

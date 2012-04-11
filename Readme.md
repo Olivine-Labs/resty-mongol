@@ -110,6 +110,7 @@ Returns 1 in case of success, or nil with error message.
 ####col = db:get_col(collection_name)
 Returns a collection object for more operations.
 
+####gridfs = db:get_gridfs(fs)
 
 ###Collection objects
 ------------
@@ -183,6 +184,30 @@ Returns an array with size `size` sorted by given field.
 ####objid:get_pid()
 ####objid:get_hostname()
 ####objid:get_inc()
+
+###Grid FS Object
+-------------------
+
+_under developing_
+
+####gridfs_file = gridfs:find_one(fields)
+####gridfs_file = gridfs:remove(fields)
+####n, err = gridfs:insert(file_handler, meta, safe)
+Returns 0 for success, or nil with error message.
+
+ - file_handler is file handler returned by io:open().
+ - meta is a table include `filename, contentType, aliases, metadata` or anything the user wants to store. Default meta.filename is the object id in string.
+ - safe can be a boolean or integer, defaults to `0`. If `1`, the program will issue a cmd `getlasterror` to server to query the result. If `false`, return value `n` would always be `-1`
+
+####gridfs_file = gridfs:open(fields)
+
+###Grid FS File Object
+-------------------
+
+####gridfs_file:read()
+####gridfs_file:write()
+####gridfs_file:close()
+
 
 Notes
 ---------------------------

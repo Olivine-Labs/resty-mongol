@@ -57,8 +57,10 @@ local function get_os_machineid()
     return machineid
 end
 
+local pid = 0
 local function get_os_pid()
-    local pid
+    if pid ~= 0 then return pid end
+
     if hasposix then
         pid = posix.getpid().pid
     else
@@ -74,7 +76,7 @@ local inc = 0
 local function generate_id ( )
     inc = inc + 1
     -- "A BSON ObjectID is a 12-byte value consisting of a 4-byte timestamp (seconds since epoch), a 3-byte machine id, a 2-byte process id, and a 3-byte counter. Note that the timestamp and counter fields must be stored big endian unlike the rest of BSON"
-    return num_to_be_uint ( os.time ( ) , 4 ) .. get_os_machineid .. get_os_pid() .. num_to_be_uint ( inc , 3 )
+    return num_to_be_uint ( os.time ( ) , 4 ) .. get_os_machineid() .. get_os_pid() .. num_to_be_uint ( inc , 3 )
 end
 
 local function new_object_id(str)

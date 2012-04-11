@@ -131,7 +131,8 @@ function colmethods:insert(docs, continue_on_error, safe)
         else
             return r["n"]
         end
-    else return -1 end
+    else
+        return -1 end
 end
 
 function colmethods:update(selector, update, upsert, multiupdate, safe)

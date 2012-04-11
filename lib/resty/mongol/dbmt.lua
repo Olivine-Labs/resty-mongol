@@ -10,6 +10,7 @@ local md5 = require "md5"
 local md5hex = md5.sumhexa
 
 local colmt = require ( mod_name .. ".colmt" )
+local gridfs = require ( mod_name .. ".gridfs" )
 
 local dbmethods = { }
 local dbmt = { __index = dbmethods }
@@ -86,5 +87,18 @@ function dbmethods:get_col(collection)
         } , colmt )
 end
 
+function dbmethods:get_gridfs(fs)
+    if not fs then
+        return nil, "fs name needed"
+    end
+
+    return setmetatable({
+            conn = self.conn;
+            db_obj = self;
+            db = self.db;
+            file_col = self:get_col(fs..".files");
+            chunk_col = self:get_col(fs..".chunks");
+        } , gridfs)
+end
 
 return dbmt
