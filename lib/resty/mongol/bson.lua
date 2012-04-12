@@ -65,7 +65,7 @@ local function read_document ( get , numerical )
 			else
 				error ( f:byte ( ) )
 			end
-		elseif op == "9" then -- UTC datetime milliseconds
+		elseif op == "\9" then -- UTC datetime milliseconds
 			v = le_uint_to_num ( get ( 8 ) , 1 , 8 )
 		elseif op == "\10" then -- Null
 			v = nil

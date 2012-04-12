@@ -191,7 +191,13 @@ Returns an array with size `size` sorted by given field.
 _under developing_
 
 ####gridfs_file = gridfs:find_one(fields)
-####gridfs_file = gridfs:remove(fields)
+####gridfs_file = gridfs:remove(fields, continue_on_err, safe)
+Returns number of files been deleted, or nil with error message.
+
+ - singleRemove if set to 1, the database will remove only the first matching document in the collection. Otherwise all matching documents will be removed. Default to `0`
+ - safe can be a boolean or integer, defaults to `0`. If `1`, the program will issue a cmd `getlasterror` to server to query the result. If `false`, return value `n` would always be `-1`
+
+####n, err = gridfs:get(file_handler, fields)
 ####n, err = gridfs:insert(file_handler, meta, safe)
 Returns 0 for success, or nil with error message.
 
@@ -204,7 +210,7 @@ Returns 0 for success, or nil with error message.
 ###Grid FS File Object
 -------------------
 
-####gridfs_file:read()
+####gridfs_file:read(size, offset)
 ####gridfs_file:write()
 ####gridfs_file:close()
 

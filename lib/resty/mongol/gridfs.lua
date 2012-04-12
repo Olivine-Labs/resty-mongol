@@ -4,18 +4,58 @@ local md5 = require "resty.md5"
 local str = require "resty.string"
 local bson = require ( mod_name .. ".bson" )
 local object_id = require ( mod_name .. ".object_id" )
+local gridfs_file= require ( mod_name .. ".gridfs_file" )
 
 local gridfs_mt = { }
 local gridfs = { __index = gridfs_mt }
 local get_bin_data = bson.get_bin_data
 local get_utc_date = bson.get_utc_date
 
-function gridfs_mt:insert(fh, meta, safe)
-    if not meta then meta = {} end
+function gridfs_mt:find_one(fields)
+    local r = self.file_col:find_one(fields)
+    if not r then return nil end
 
-    if not meta.chunkSize then
-        meta.chunkSize = 256*1024
+    return setmetatable({
+                    file_col = self.file_col;
+                    chunk_col = self.chunk_col;
+                    chunk_size = r.chunkSize;
+                    files_id = r._id;
+                    file_size = r.length;
+                    }, gridfs_file)
+end
+
+function gridfs_mt:get(fh, fields)
+    local f = self:find_one(fields)
+    if not f then return nil, "file not found" end
+    local r = fh:write(f:read())
+    return r
+end
+
+function gridfs_mt:remove(fields, continue_on_err, safe)
+    local r, err 
+    local n = 0
+    if fields == {} then
+        r,err = self.chunk_col:delete({}, continue_on_err, safe) 
+        if not r then return nil, "remove chunks failed: "..err end
+        r,err = self.file_col:delete({}, continue_on_err, safe) 
+        if not r then return nil, "remove files failed: "..err end
+        return r
     end
+        
+    local cursor = self.file_col:find(fields, {_id=1})
+    for k,v in cursor:pairs() do
+        r,err = self.chunk_col:delete({files_id=v._id}, continue_on_err, safe) 
+        if not r then return nil, "remove chunks failed: "..err end
+        r,err = self.file_col:delete({_id=v._id}, continue_on_err, safe) 
+        if not r then return nil, "remove files failed: "..err end
+        n = n + 1
+    end
+    return n
+end
+
+function gridfs_mt:insert(fh, meta, safe)
+    meta = meta or {}
+    meta.chunkSize = meta.chunkSize or 256*1024
 
     local id
     if meta._id then

@@ -184,7 +184,6 @@ GET /t
 
 === TEST 3: cursor sort after next
 --- http_config eval: $::HttpConfig
---- ONLY
 --- config
     location /t {
         content_by_lua '
@@ -207,14 +206,14 @@ GET /t
 
             local i, j
             local t = {}
-            for i = 1,50 do
+            for i = 1,1000 do
                 j = 100 - i
-                r, err = col:insert({{name="dog",n=i,m=j}}, nil, true)
-                if not r then ngx.say("insert failed: "..err) end
-                --table.insert(t, {name="dog",n=i,m=j})
+                --r, err = col:insert({{name="dog",n=i,m=j}}, nil, true)
+                --if not r then ngx.say("insert failed: "..err) end
+                table.insert(t, {name="dog",n=i,m=j})
             end
-            --r, err = col:insert(t, nil, true)
-            --if not r then ngx.say("insert failed: "..err) end
+            r, err = col:insert(t, nil, true)
+            if not r then ngx.say("insert failed: "..err) end
 
             r = col:find({name="dog"}, nil, 5)
             r:limit(5)
@@ -242,18 +241,19 @@ GET /t
             conn:close()
         ';
     }
+--- timeout: 50
 --- request
 GET /t
 --- response_body
-949
-950
-951
-952
-953
-950
-951
-952
-953
+955
+956
+957
+958
+959
+956
+957
+958
+959
 sort failed: sort must be an array
 --- no_error_log
 [error]
