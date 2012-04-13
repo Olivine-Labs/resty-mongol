@@ -191,27 +191,42 @@ Returns an array with size `size` sorted by given field.
 _under developing_
 
 ####gridfs_file = gridfs:find_one(fields)
+Returns a gridfs file object.
+
 ####gridfs_file = gridfs:remove(fields, continue_on_err, safe)
 Returns number of files been deleted, or nil with error message.
 
  - singleRemove if set to 1, the database will remove only the first matching document in the collection. Otherwise all matching documents will be removed. Default to `0`
  - safe can be a boolean or integer, defaults to `0`. If `1`, the program will issue a cmd `getlasterror` to server to query the result. If `false`, return value `n` would always be `-1`
 
-####n, err = gridfs:get(file_handler, fields)
+####bool = gridfs:get(file_handler, fields)
+Writes first object matchs fields into file_handler. This API will malloc a buffer in file size in memory.
+
 ####n, err = gridfs:insert(file_handler, meta, safe)
 Returns 0 for success, or nil with error message.
 
  - file_handler is file handler returned by io:open().
- - meta is a table include `filename, contentType, aliases, metadata` or anything the user wants to store. Default meta.filename is the object id in string.
+ - meta is a table include `_id, filename, chunkSize, contentType, aliases, metadata` or anything the user wants to store. Default meta.filename is the object id in string.
  - safe can be a boolean or integer, defaults to `0`. If `1`, the program will issue a cmd `getlasterror` to server to query the result. If `false`, return value `n` would always be `-1`
 
-####gridfs_file = gridfs:open(fields)
+####gridfs_file = gridfs:new(meta)
+Returns a new gridfs file object.
+
+ - meta is a table include `_id, filename, chunkSize, contentType, aliases, metadata` or anything the user wants to store. Default meta.filename is the object id in string.
+
 
 ###Grid FS File Object
 -------------------
 
-####gridfs_file:read(size, offset)
-####gridfs_file:write()
+####n, err = gridfs_file:read(size, offset)
+Returns number of bytes read from mongodb.
+
+ - offse start from 0
+
+####gridfs_file:write(buf, offset, size)
+
+ - offse start from 0
+
 ####gridfs_file:close()
 
 

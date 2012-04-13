@@ -53,19 +53,28 @@ function gridfs_mt:remove(fields, continue_on_err, safe)
     return n
 end
 
+function gridfs_mt:new(meta)
+    meta = meta or {}
+    meta._id = meta._id or object_id.new()
+    meta.chunkSize = meta.chunkSize or 256*1024
+    meta.filename = meta.filename or meta._id:tostring()
+
+    return setmetatable({
+                    file_col = self.file_col;
+                    chunk_col = self.chunk_col;
+                    chunk_size = meta.chunkSize;
+                    files_id = meta._id;
+                    file_size = 0;
+                    file_md5 = 0;
+                    file_name = meta.filename;
+                    }, gridfs_file)
+end
+
 function gridfs_mt:insert(fh, meta, safe)
     meta = meta or {}
     meta.chunkSize = meta.chunkSize or 256*1024
-
-    local id
-    if meta._id then
-        id = meta._id
-    else
-        meta._id = object_id.new()
-    end
-    if not meta.filename then
-        meta.filename = meta._id:tostring()
-    end
+    meta._id = meta._id or object_id.new()
+    meta.filename = meta.filename or meta._id:tostring()
 
     local n = 0
     local length = 0

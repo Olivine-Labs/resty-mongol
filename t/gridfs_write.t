@@ -24,7 +24,8 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: insert and remove one and get file < chunksize
+
+=== TEST 1: write chunk < 1, offset = 0
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -46,120 +47,16 @@ __DATA__
             r, err = fs:remove({}, nil, true)
             if not r then ngx.say("delete failed: "..err) end
 
-            local f,err = io.open("Readme.md", "rb")
-            if not f then ngx.say("fs open failed: "..err) ngx.exit(ngx.HTTP_OK) end
-            r, err = fs:insert(f, nil, true)
-            if not r then ngx.say("fs insert failed: "..err) end
-            ngx.say(r)
-            io.close(f)
-
-            r, err = fs:remove({}, nil, true)
-            if not r then ngx.say("delete failed: "..err) end
-            ngx.say(r)
-
-            local f,err = io.open("Readme.md", "rb")
-            r, err = fs:insert(f, {filename="testfile"}, false)
-            if not r then ngx.say("fs insert failed: "..err) end
-            ngx.say(r)
-            io.close(f)
-
-            f = io.open("/tmp/testfile", "wb")
-            r = fs:get(f, {filename="testfile"})
-            if not r then ngx.say("get file failed: "..err) end
-            io.close(f)
-        ';
-    }
---- request
-GET /t
---- response_body
-0
-1
--1
---- no_error_log
-[error]
-
-=== TEST 2: insert and get file > chunksize
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
-            conn:set_timeout(10000) 
-            local ok, err = conn:connect("10.6.2.51")
-
-            if not ok then
-                ngx.say("connect failed: "..err)
-            end
-
-            local db = conn:new_db_handle("test")
-            local r = db:auth("admin", "admin")
-            if not r then ngx.say("auth failed") end
-            local fs = db:get_gridfs("fs")
-
-            r, err = fs:remove({}, nil, true)
-            if not r then ngx.say("delete failed: "..err) end
-
-            local f,err = io.open("Readme.md", "rb")
-            if not f then ngx.say("fs open failed: "..err) ngx.exit(ngx.HTTP_OK) end
-            r, err = fs:insert(f, {chunkSize = 256, filename="testfile"}, true)
-            if not r then ngx.say("fs insert failed: "..err) end
-            ngx.say(r)
-            io.close(f)
-
-            f = io.open("/tmp/testfile", "wb")
-            r = fs:get(f, {filename="testfile"})
-            if not r then ngx.say("get file failed: "..err) end
-            ngx.say(r)
-            io.close(f)
-
-            r, err = fs:remove({filename="testfile"}, nil, true)
-            if not r then ngx.say("delete failed: "..err) end
-            ngx.say(r)
-        ';
-    }
---- request
-GET /t
---- response_body
-0
-true
-1
---- no_error_log
-[error]
-
-=== TEST 3: insert and get file = chunksize
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
-            conn:set_timeout(10000) 
-            local ok, err = conn:connect("10.6.2.51")
-
-            if not ok then
-                ngx.say("connect failed: "..err)
-            end
-
-            local db = conn:new_db_handle("test")
-            local r = db:auth("admin", "admin")
-            if not r then ngx.say("auth failed") end
-            local fs = db:get_gridfs("fs")
-
-            r, err = fs:remove({}, nil, true)
-            if not r then ngx.say("delete failed: "..err) end
-
-            local f,err = io.open("Readme.md", "rb")
+            local f,err = io.open("t/servroot/html/test.txt", "rb")
             if not f then ngx.say("fs open failed: "..err) ngx.exit(ngx.HTTP_OK) end
 
-            local current = f:seek()      -- get current position
-            local size = f:seek("end")    -- get file size
-            f:seek("set", current)        -- restore position
-
-            r, err = fs:insert(f, {chunkSize = size, filename="testfile"}, true)
+            r, err = fs:insert(f, {chunkSize = 6, filename="testfile"}, true)
             if not r then ngx.say("fs insert failed: "..err) end
             ngx.say(r)
             io.close(f)
+
+            local gf = fs:find_one({filename="testfile"})
+            gf:write("abc", 0)
 
             f = io.open("/tmp/testfile", "wb")
             r = fs:get(f, {filename="testfile"})
@@ -168,14 +65,21 @@ true
 
         ';
     }
+--- user_files
+>>> test.txt
+11111111111111111111
 --- request
 GET /t
 --- response_body
 0
 --- no_error_log
+--- output_files
+>>> /tmp/testfile 
+abc11111111111111111
+--- no_error_log
 [error]
 
-=== TEST 4: remove file not existed
+=== TEST 2: write chunk < 1, offset > 0
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -194,15 +98,146 @@ GET /t
             if not r then ngx.say("auth failed") end
             local fs = db:get_gridfs("fs")
 
-            r, err = fs:remove({filename="notexisted"}, nil, true)
+            r, err = fs:remove({}, nil, true)
             if not r then ngx.say("delete failed: "..err) end
+
+            local f,err = io.open("t/servroot/html/test.txt", "rb")
+            if not f then ngx.say("fs open failed: "..err) ngx.exit(ngx.HTTP_OK) end
+
+            r, err = fs:insert(f, {chunkSize = 6, filename="testfile"}, true)
+            if not r then ngx.say("fs insert failed: "..err) end
             ngx.say(r)
+            io.close(f)
+
+            local gf = fs:find_one({filename="testfile"})
+            gf:write("abc", 2)
+
+            f = io.open("/tmp/testfile", "wb")
+            r = fs:get(f, {filename="testfile"})
+            if not r then ngx.say("get file failed: "..err) end
+            io.close(f)
+
         ';
     }
+--- user_files
+>>> test.txt
+11111111111111111111
 --- request
 GET /t
 --- response_body
 0
+--- no_error_log
+--- output_files
+>>> /tmp/testfile 
+11abc111111111111111
+--- no_error_log
+[error]
+
+=== TEST 4: write chunk = 2, offset = 0
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+            local ok, err = conn:connect("10.6.2.51")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+            local fs = db:get_gridfs("fs")
+
+            r, err = fs:remove({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            local f,err = io.open("t/servroot/html/test.txt", "rb")
+            if not f then ngx.say("fs open failed: "..err) ngx.exit(ngx.HTTP_OK) end
+
+            r, err = fs:insert(f, {chunkSize = 6, filename="testfile"}, true)
+            if not r then ngx.say("fs insert failed: "..err) end
+            ngx.say(r)
+            io.close(f)
+
+            local gf = fs:find_one({filename="testfile"})
+            gf:write("abcabcdefdef", 0)
+
+            f = io.open("/tmp/testfile", "wb")
+            r = fs:get(f, {filename="testfile"})
+            if not r then ngx.say("get file failed: "..err) end
+            io.close(f)
+
+        ';
+    }
+--- user_files
+>>> test.txt
+11111111111111111111
+--- request
+GET /t
+--- response_body
+0
+--- no_error_log
+--- output_files
+>>> /tmp/testfile 
+abcabcdefdef11111111
+--- no_error_log
+[error]
+
+=== TEST 5: write chunk > 1, offset = 0
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+            local ok, err = conn:connect("10.6.2.51")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+            local fs = db:get_gridfs("fs")
+
+            r, err = fs:remove({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            local f,err = io.open("t/servroot/html/test.txt", "rb")
+            if not f then ngx.say("fs open failed: "..err) ngx.exit(ngx.HTTP_OK) end
+
+            r, err = fs:insert(f, {chunkSize = 6, filename="testfile"}, true)
+            if not r then ngx.say("fs insert failed: "..err) end
+            ngx.say(r)
+            io.close(f)
+
+            local gf = fs:find_one({filename="testfile"})
+            gf:write("abcabcdef", 0)
+
+            f = io.open("/tmp/testfile", "wb")
+            r = fs:get(f, {filename="testfile"})
+            if not r then ngx.say("get file failed: "..err) end
+            io.close(f)
+
+        ';
+    }
+--- user_files
+>>> test.txt
+11111111111111111111
+--- request
+GET /t
+--- response_body
+0
+--- no_error_log
+--- output_files
+>>> /tmp/testfile 
+abcabcdef11111111111
 --- no_error_log
 [error]
 
