@@ -210,8 +210,8 @@ Returns 0 for success, or nil with error message.
  - meta is a table include `_id, filename, chunkSize, contentType, aliases, metadata` or anything the user wants to store. Default meta.filename is the object id in string.
  - safe can be a boolean or integer, defaults to `0`. If `1`, the program will issue a cmd `getlasterror` to server to query the result. If `false`, return value `n` would always be `-1`
 
-####gridfs_file = gridfs:new(meta)
-Returns a new gridfs file object.
+####gridfs_file, err = gridfs:new(meta)
+Returns a new gridfs file object, or nil with error message.
 
  - meta is a table include `_id, filename, chunkSize, contentType, aliases, metadata` or anything the user wants to store. Default meta.filename is the object id in string.
 
@@ -220,16 +220,18 @@ Returns a new gridfs file object.
 -------------------
 
 ####n, err = gridfs_file:read(size, offset)
-Returns number of bytes read from mongodb.
+Returns number of bytes read from mongodb, or nil with error message.
 
  - offse start from 0
 
-####gridfs_file:write(buf, offset, size)
+####n, err = gridfs_file:write(buf, offset, size)
+Returns number of bytes writen into mongodb, or nil with error message.
 
- - offse start from 0
+ - offset is the file offset(should not beyond the end of the file), starting from 0.
+ - size is the number of bytes to be writen.
 
-####gridfs_file:close()
-
+####bool, err = gridfs_file:update_md5()
+Hashs the file content and updates the md5 in file collection.
 
 Notes
 ---------------------------

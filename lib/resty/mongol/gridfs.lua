@@ -61,6 +61,12 @@ function gridfs_mt:new(meta)
     meta.chunkSize = meta.chunkSize or 256*1024
     meta.filename = meta.filename or meta._id:tostring()
 
+    meta.md5 = 0
+    meta.uploadDate = get_utc_date(ngx.time() * 1000)
+    meta.length = 0
+    local r, err = self.file_col:insert({meta}, nil, true)
+    if not r then return nil, err end
+
     return setmetatable({
                     file_col = self.file_col;
                     chunk_col = self.chunk_col;

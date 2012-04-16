@@ -11,6 +11,8 @@ local get_bin_data = bson.get_bin_data
 -- write size bytes from the buf string into mongo, by the offset 
 function gridfs_file_mt:write(buf, offset, size)
     size = size or string.len(buf)
+    if offset > self.file_size then return nil, "invalid offset" end
+    if size > #buf then return nil, "invalid size" end
 
     local cn        -- number of chunks to be updated
     local af        -- number of bytes to be updated in first chunk
@@ -52,7 +54,7 @@ function gridfs_file_mt:write(buf, offset, size)
             if i == 1 then
                 od = self.chunk_col:find_one(
                                 {files_id = self.files_id, n = n+i-1})
-                if of ~= 0 then
+                if of ~= 0 and od then
                     if size + of >= self.chunk_size then
                         --               chunk1 chunk2 chunk3
                         -- old data      ====== ====== ======
@@ -68,7 +70,7 @@ function gridfs_file_mt:write(buf, offset, size)
                                 .. string.sub(od.data, size + of + 1)
                     end
                     bn = af
-                elseif of == 0 then
+                elseif of == 0 and od then
                     if size < self.chunk_size then
                         --               chunk1 chunk2 chunk3
                         -- old data      ====== ====== ======
@@ -83,10 +85,13 @@ function gridfs_file_mt:write(buf, offset, size)
                         t = string.sub(buf, 1, self.chunk_size)
                         bn = bn + self.chunk_size
                     end
+                else
+                    t = string.sub(buf, 1, self.chunk_size)
+                    bn = bn + self.chunk_size
                 end
                 nv["$set"] = {data = get_bin_data(t)}
                 r,err = self.chunk_col:update({files_id = self.files_id, 
-                                            n = n+i-1}, nv, 0, 0, true)
+                                            n = n+i-1}, nv, 1, 0, true)
                 if not r then return nil,"write failed: "..err end
             elseif i == cn then
                 od = self.chunk_col:find_one(
@@ -167,7 +172,7 @@ function gridfs_file_mt:update_md5()
 
     for i = 0, n do
         r = self.chunk_col:find_one({files_id = self.files_id, n = i})
-        if not r then return nil, "read chunk failed" end
+        if not r then return false, "read chunk failed" end
 
         md5_obj:update(r.data) 
     end
@@ -177,7 +182,7 @@ function gridfs_file_mt:update_md5()
     nv["$set"] = {md5 = md5hex}
     self.file_md5 = md5hex
     r,err = self.file_col:update({_id = self.files_id}, nv, 0, 0, true)
-    if not r then return nil, "update failed: "..err end
+    if not r then return false, "update failed: "..err end
     return true
 end
 

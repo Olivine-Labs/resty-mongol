@@ -676,3 +676,53 @@ GET /t
 12abc
 --- no_error_log
 [error]
+
+
+=== TEST 14: new and write and update md5
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+            local ok, err = conn:connect("10.6.2.51")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+            local fs = db:get_gridfs("fs")
+
+            r, err = fs:remove({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            local gf = fs:new({chunkSize = 6, filename = "testfile"})
+
+            r,err = gf:write("abc", 0)
+            if not r then ngx.say("write failed: "..err) end
+
+            f = io.open("/tmp/testfile", "wb")
+            r,err = fs:get(f, {filename="testfile"})
+            if not r then ngx.say("get file failed: "..err) end
+            io.close(f)
+
+            r, err = gf:update_md5()
+            if not r then ngx.say("update md5 failed: "..err) end
+            ngx.say(gf.file_md5)
+        ';
+    }
+--- user_files
+--- request
+GET /t
+--- response_body
+900150983cd24fb0d6963f7d28e17f72
+--- no_error_log
+--- output_files
+>>> /tmp/testfile chop
+abc
+--- no_error_log
+[error]
