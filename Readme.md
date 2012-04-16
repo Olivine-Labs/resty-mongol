@@ -121,6 +121,7 @@ Returns a collection object for more operations.
 Returns 1 in case of success, or nil with error message.
 
 ####n, err = col:update(selector, update, upsert, multiupdate, safe)
+Returns number of rows been updated or nil for error.
 
  - upsert, if set to `1`, the database will insert the supplied object into the collection if no matching document is found, default to `0`.
  - multiupdate, if set to `1`, the database will update all matching objects in the collection. Otherwise only updates first matching doc, default to `0`. Multi update only works with $ operators.

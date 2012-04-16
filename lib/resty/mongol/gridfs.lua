@@ -21,6 +21,8 @@ function gridfs_mt:find_one(fields)
                     chunk_size = r.chunkSize;
                     files_id = r._id;
                     file_size = r.length;
+                    file_md5 = r.md5;
+                    file_name = r.filename;
                     }, gridfs_file)
 end
 

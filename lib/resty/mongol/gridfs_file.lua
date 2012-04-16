@@ -16,7 +16,7 @@ function gridfs_file_mt:write(buf, offset, size)
     local af        -- number of bytes to be updated in first chunk
     local bn = 0    -- bytes number of buf already updated
     local nv = {}
-    local od, t, i
+    local od, t, i, r, err
     local of = offset % self.chunk_size
     local n = math.floor(offset/self.chunk_size)
 
@@ -29,8 +29,9 @@ function gridfs_file_mt:write(buf, offset, size)
             nv["$set"] = {data = get_bin_data(string.sub(buf, 
                             self.chunk_size*(i-1) + 1, 
                             self.chunk_size*(i-1) + self.chunk_size))}
-            self.chunk_col:update({files_id = self.files_id, n = n+i-1}, nv,
-                    0, 0, true)
+            r, err = self.chunk_col:update({files_id = self.files_id, 
+                                            n = n+i-1}, nv, 0, 0, true)
+            if not r then return nil,"write failed: "..err end
         end
 
     else
@@ -84,8 +85,9 @@ function gridfs_file_mt:write(buf, offset, size)
                     end
                 end
                 nv["$set"] = {data = get_bin_data(t)}
-                self.chunk_col:update({files_id = self.files_id, n = n+i-1},
-                         nv, 0, 0, true)
+                r,err = self.chunk_col:update({files_id = self.files_id, 
+                                            n = n+i-1}, nv, 0, 0, true)
+                if not r then return nil,"write failed: "..err end
             elseif i == cn then
                 od = self.chunk_col:find_one(
                                 {files_id = self.files_id, n = n + i - 1}
@@ -97,14 +99,16 @@ function gridfs_file_mt:write(buf, offset, size)
                     t = string.sub(buf, bn + 1, size) 
                 end
                 nv["$set"] = {data = get_bin_data(t)}
-                self.chunk_col:update({files_id = self.files_id, n = n+i-1},
-                         nv, 1, 0, true)
+                r,err = self.chunk_col:update({files_id = self.files_id, 
+                                            n = n+i-1}, nv, 1, 0, true)
+                if not r then return nil,"write failed: "..err end
                 bn = size
             else
                 nv["$set"] = {data = get_bin_data(string.sub(buf, 
                                         bn + 1, bn + self.chunk_size))}
-                self.chunk_col:update({files_id = self.files_id, n = n+i-1},
-                        nv, 1, 0, true)
+                r,err = self.chunk_col:update({files_id = self.files_id, 
+                                        n = n+i-1}, nv, 1, 0, true)
+                if not r then return nil,"write failed: "..err end
                 bn = bn + self.chunk_size
             end
         end
@@ -113,12 +117,15 @@ function gridfs_file_mt:write(buf, offset, size)
     local nf = offset + bn
     if nf > self.file_size then
         nv["$set"] = {length = nf}
-        self.file_col:update({_id = self.files_id},nv, 
+        r,err = self.file_col:update({_id = self.files_id},nv, 
                         0, 0, true)
+        if not r then return nil,"write failed: "..err end
     end
+
     nv["$set"] = {md5 = 0}
-    self.file_col:update({_id = self.files_id},nv, 
+    r,err = self.file_col:update({_id = self.files_id},nv, 
                         0, 0, true)
+    if not r then return nil,"write failed: "..err end
     return bn
 end
 
@@ -151,6 +158,27 @@ function gridfs_file_mt:read(size, offset)
         if rn >= size then break end
     end
     return bytes
+end
+
+function gridfs_file_mt:update_md5()
+    local n = math.floor(self.file_size/self.chunk_size)
+    local md5_obj = md5:new()
+    local r, i, err
+
+    for i = 0, n do
+        r = self.chunk_col:find_one({files_id = self.files_id, n = i})
+        if not r then return nil, "read chunk failed" end
+
+        md5_obj:update(r.data) 
+    end
+    local md5hex = str.to_hex(md5_obj:final())
+
+    local nv = {}
+    nv["$set"] = {md5 = md5hex}
+    self.file_md5 = md5hex
+    r,err = self.file_col:update({_id = self.files_id}, nv, 0, 0, true)
+    if not r then return nil, "update failed: "..err end
+    return true
 end
 
 return gridfs_file
