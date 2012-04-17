@@ -116,8 +116,8 @@ GET /t
 
             local i, j
             local t = {}
-            for i = 1,1000 do
-                j = 100 - i
+            for i = 1,10 do
+                j = 10 - i
                 table.insert(t, {name="dog",n=i,m=j})
             end
             r, err = col:insert(t, nil, true)
@@ -163,22 +163,22 @@ GET /t
 --- request
 GET /t
 --- response_body
-953
-952
-951
-950
-949
-949
-950
-951
-952
-953
-951
-950
-949
-949
-950
-951
+5
+4
+3
+2
+1
+1
+2
+3
+4
+5
+3
+2
+1
+1
+2
+3
 --- no_error_log
 [error]
 
@@ -206,8 +206,8 @@ GET /t
 
             local i, j
             local t = {}
-            for i = 1,1000 do
-                j = 100 - i
+            for i = 1,10 do
+                j = 10 - i
                 --r, err = col:insert({{name="dog",n=i,m=j}}, nil, true)
                 --if not r then ngx.say("insert failed: "..err) end
                 table.insert(t, {name="dog",n=i,m=j})
@@ -245,15 +245,15 @@ GET /t
 --- request
 GET /t
 --- response_body
-955
-956
-957
-958
-959
-956
-957
-958
-959
+1
+2
+3
+4
+5
+2
+3
+4
+5
 sort failed: sort must be an array
 --- no_error_log
 [error]

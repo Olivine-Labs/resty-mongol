@@ -66,6 +66,9 @@ local function get_os_pid()
     else
         --pid = assert ( tonumber ( assert ( io.popen ( "ps -o ppid= -p $$") ):read ( "*a" ) ) )
         local p = io.popen("ps -o ppid= -p $$"):read("*a")
+        if not p then ngx.log(ngx.ERR, "get pid failed") 
+            p = io.popen("ps -o ppid= -p $$"):read("*a")
+        end
         pid = assert(tonumber(p)) 
     end
     pid = num_to_le_uint(pid, 2)
