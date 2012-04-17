@@ -6,7 +6,6 @@ local strformat = string.format
 local t_insert = table.insert
 local t_concat = table.concat
 
-local md5 = require "md5"
 local hasposix , posix = pcall ( require , "posix" )
 
 local ll = require ( mod_name .. ".ll" )
@@ -53,7 +52,7 @@ local function get_os_machineid()
     else
         machineid = assert(io.popen("uname -n")):read("*l")
     end
-    machineid = md5.sum(machineid):sub(1, 3)
+    machineid = ngx.md5_bin(machineid):sub(1, 3)
     return machineid
 end
 

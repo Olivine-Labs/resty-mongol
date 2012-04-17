@@ -6,9 +6,6 @@ local attachpairs_start = misc.attachpairs_start
 local setmetatable = setmetatable
 local pcall = pcall
 
-local md5 = require "md5"
-local md5hex = md5.sumhexa
-
 local colmt = require ( mod_name .. ".colmt" )
 local gridfs = require ( mod_name .. ".gridfs" )
 
@@ -46,7 +43,7 @@ function dbmethods:dropDatabase ( )
 end
 
 local function pass_digest ( username , password )
-    return md5hex ( username .. ":mongo:" .. password )
+    return ngx.md5(username .. ":mongo:" .. password)
 end
 
 function dbmethods:add_user ( username , password )
@@ -60,7 +57,7 @@ function dbmethods:auth(username, password)
         return nil, err
     end
  
-    local digest = md5hex ( r.nonce .. username .. pass_digest ( username , password ) )
+    local digest = ngx.md5( r.nonce .. username .. pass_digest ( username , password ) )
 
     r, err = self:cmd(attachpairs_start({
             authenticate = true ;

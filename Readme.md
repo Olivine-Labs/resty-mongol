@@ -9,8 +9,6 @@ Dependancies
 
 luajit(or `attempt to yield across metamethod/C-call boundary error` will be produced.)
 
-lua-md5
-
 [ngx_lua 0.5.0rc5](https://github.com/chaoslawful/lua-nginx-module/tags) or [ngx_openresty 1.0.11.7](http://openresty.org/#Download) is required.
 
 
