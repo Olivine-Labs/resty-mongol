@@ -87,7 +87,7 @@ function gridfs_file_mt:write(buf, offset, size)
                     end
                 else
                     t = string.sub(buf, 1, self.chunk_size)
-                    bn = bn + self.chunk_size
+                    bn = bn + #t --self.chunk_size
                 end
                 nv["$set"] = {data = get_bin_data(t)}
                 r,err = self.chunk_col:update({files_id = self.files_id, 

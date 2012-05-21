@@ -704,6 +704,7 @@ GET /t
 
             r,err = gf:write("abc", 0)
             if not r then ngx.say("write failed: "..err) end
+            ngx.say(r)
 
             f = io.open("/tmp/testfile", "wb")
             r,err = fs:get(f, {filename="testfile"})
@@ -719,6 +720,7 @@ GET /t
 --- request
 GET /t
 --- response_body
+3
 900150983cd24fb0d6963f7d28e17f72
 --- no_error_log
 --- output_files
