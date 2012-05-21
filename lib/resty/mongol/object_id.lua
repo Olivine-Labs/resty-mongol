@@ -60,16 +60,7 @@ local pid = 0
 local function get_os_pid()
     if pid ~= 0 then return pid end
 
-    if hasposix then
-        pid = posix.getpid().pid
-    else
-        --pid = assert ( tonumber ( assert ( io.popen ( "ps -o ppid= -p $$") ):read ( "*a" ) ) )
-        local p = io.popen("ps -o ppid= -p $$"):read("*a")
-        if not p then ngx.log(ngx.ERR, "get pid failed") 
-            p = io.popen("ps -o ppid= -p $$"):read("*a")
-        end
-        pid = assert(tonumber(p)) 
-    end
+    pid = ngx.var.pid
     pid = num_to_le_uint(pid, 2)
     return pid
 end
