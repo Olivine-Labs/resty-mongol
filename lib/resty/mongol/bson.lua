@@ -141,7 +141,7 @@ local function pack ( k , v )
 		return "\5" .. k .. "\0" .. num_to_le_uint(string.len(v.v)) .. 
                v.st .. v.v
 	elseif ot == "table" then
-		local doc , array = to_bson ( v )
+		local doc , array = to_bson(v)
 		if array then
 			return "\4" .. k .. "\0" .. doc
 		else
@@ -152,7 +152,7 @@ local function pack ( k , v )
 	end
 end
 
-function to_bson ( ob )
+function to_bson(ob)
 	-- Find out if ob if an array; string->value map; or general table
 	local onlyarray = true
 	local seen_n , high_n = { } , 0
@@ -162,7 +162,7 @@ function to_bson ( ob )
 		onlystring = onlystring and ( t_k == "string" )
 		if onlyarray then
 			if t_k == "number" and k >= 0 then
-				if k > high_n then
+				if k >= high_n then
 					high_n = k
 					seen_n [ k ] = v
 				end
@@ -176,17 +176,17 @@ function to_bson ( ob )
 	local retarray , m = false
 	if onlystring then -- Do string first so the case of an empty table is done properly
 		local r = { }
-		for k , v in pairs ( ob ) do
-			t_insert ( r , pack ( k , v ) )
-		end
+        for k , v in pairs ( ob ) do
+--ngx.log(ngx.ERR,"="..k..i)
+            t_insert ( r , pack ( k , v ) )
+        end
 		m = t_concat ( r )
 	elseif onlyarray then
 		local r = { }
 
-		local low = 1
-		if seen_n [ 0 ] then low = 0 end
-
-		for i=1 , high_n do
+		local low = 0
+		--if seen_n [ 0 ] then low = 0 end
+		for i=low , high_n do
 			r [ i ] = pack ( i , seen_n [ i ] )
 		end
 

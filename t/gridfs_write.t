@@ -616,6 +616,7 @@ GET /t
 --- output_files
 >>> /tmp/testfile chop
 12abcdef
+--- ONLY
 --- no_error_log
 [error]
 
