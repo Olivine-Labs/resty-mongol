@@ -54,13 +54,8 @@ __DATA__
             if not r then ngx.say("insert failed: "..err) end
             ngx.say(r)
 
-            r = col:find({name="dog"})
-
-            for i , v in r:pairs() do
-                if v["name"] then
-                    ngx.say(v["name"])
-                end
-            end
+            r = col:find_one({name="dog"})
+            ngx.say(r["name"])
             conn:close()
         ';
     }
@@ -361,12 +356,8 @@ GET /t
             if not r then ngx.say("update failed: "..err) end
             ngx.say(r)
 
-            r = col:find({name="cat"})
-            for i , v in r:pairs() do
-                if v["name"] then
-                    ngx.say(v["name"])
-                end
-            end
+            r = col:find_one({name="cat"})
+            ngx.say(r["name"])
 
             r,err = col:update({name="sheep"},{name="cat"}, 1, nil, true)
             if not r then ngx.say("update failed: "..err) end
@@ -693,7 +684,7 @@ delete failed: unauthorized
 --- no_error_log
 [error]
 
-=== TEST 16: col insert table
+=== TEST 16: col insert array
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -729,24 +720,12 @@ delete failed: unauthorized
             if not r then ngx.say("insert failed: "..err) end
             ngx.say(r)
 
-            r = col:find({name="dog"})
-            for i , v in r:pairs() do
-                if v["name"] then
-                    ngx.say(v["name"])
-                end
-                if v["tab"] then
-                    for k,v in pairs(v["tab"][1]) do
-                        ngx.say(v)
-                    end
-                end
-                if v["tab1"] then
-                    ngx.say(v["tab1"][0])
-                end
-                if v["tab2"] then
-                    ngx.say(v["tab2"][0])
-                    ngx.say(v["tab2"][2])
-                end
-            end
+            r = col:find_one({name="dog"})
+            ngx.say(r["name"])
+            ngx.say(r["tab"][1].a)
+            ngx.say(r["tab1"][0])
+            ngx.say(r["tab2"][0])
+            ngx.say(r["tab2"][2])
 
             --local update = {}
             --update["$push"] = {tab="a3"}
@@ -801,12 +780,8 @@ a20
             if not r then ngx.say("insert failed: "..err) end
             ngx.say(r)
 
-            r = col:find({name="dog"})
-            for i , v in r:pairs() do
-                if v["name"] then
-                    ngx.say(v["name"])
-                end
-            end
+            r = col:find_one({name="dog"})
+            ngx.say(r["name"])
 
             conn:close()
         ';
@@ -816,6 +791,124 @@ GET /t
 --- response_body
 0
 dog
+--- no_error_log
+[error]
+
+=== TEST 18: col insert array and push
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+            ok, err = conn:connect("10.6.2.51")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local col = db:get_col("test")
+
+            r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+
+            r, err = col:delete({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            local t = {}
+            table.insert(t,{a = "aa"})
+            table.insert(t,{b = "bb"})
+            local t1 = {[0]="a10","a11","a12"}
+            local t2 = {}
+            t2[2] = "a22"
+            t2[3] = "a23"
+            t2[4] = "a24"
+            
+            r, err = col:insert({{name="dog",n="10",tab=t,tab1=t1,tab2=t2}}, nil, true)
+            if not r then ngx.say("insert failed: "..err) end
+            ngx.say(r)
+
+            local update = {}
+            update["$push"] = {tab="a3",tab1="a13",tab2="a25"}
+            r,err = col:update({name="dog"},update, nil, nil, true)
+            if not r then ngx.say("update failed: "..err) end
+            ngx.say(r)
+
+            r = col:find_one({name="dog"})
+            if not r then ngx.say("find failed: "..err) end
+            ngx.say(r["tab"][2].b)
+            ngx.say(r["tab"][3])
+            ngx.say(r["tab1"][2])
+            ngx.say(r["tab1"][3])
+            ngx.say(r["tab2"][4])
+            ngx.say(r["tab2"][5])
+
+
+            conn:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+0
+1
+bb
+a3
+a12
+a13
+a24
+a25
+--- no_error_log
+[error]
+
+=== TEST 19: col insert table and set
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+            ok, err = conn:connect("10.6.2.51")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local col = db:get_col("test")
+
+            r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+
+            r, err = col:delete({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            local t = {a=1,b=2}
+            
+            r, err = col:insert({{name="dog",n="10",tab=t}}, nil, true)
+            if not r then ngx.say("insert failed: "..err) end
+            ngx.say(r)
+
+            local update = {}
+            update["$set"] = {}
+            update["$set"]["tab.a"] = 2
+            r,err = col:update({name="dog"},update, nil, nil, true)
+            if not r then ngx.say("update failed: "..err) end
+
+            r = col:find_one({name="dog"})
+            ngx.say(r.tab.a)
+
+            conn:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+0
+2
 --- no_error_log
 [error]
 
