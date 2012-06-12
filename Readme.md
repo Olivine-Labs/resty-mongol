@@ -239,6 +239,8 @@ Notes
 Known Issues
 ---------------------------
 1. Auth bson message has reduntant value.
+2. Could not inserting a null array, it always inserted as a document.
+3. Gridfs_new api only create a meta info in file_col.
 
 Example
 ---------------------------
@@ -253,14 +255,8 @@ Example
             local db = conn:new_db_handle ( "test" )
             col = db:get_col("test")
 
-            r = col:find({name="dog"})
-
-            for i , v in r:pairs() do
-                if v["name"] then
-                    ngx.say(v["name"])
-                end
-            end
-
+            r = col:find_one({name="dog"})
+            ngx.say(r["name"])
 
 For Test Case
 --------------------

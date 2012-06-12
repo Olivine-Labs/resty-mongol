@@ -751,7 +751,7 @@ a20
 --- no_error_log
 [error]
 
-=== TEST 17: col insert null table
+=== TEST 17: col insert array and pop
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -774,23 +774,31 @@ a20
             r, err = col:delete({}, nil, true)
             if not r then ngx.say("delete failed: "..err) end
 
-            local t = {}
+            local t = {0}
             
             r, err = col:insert({{name="dog",n="10",tab=t}}, nil, true)
             if not r then ngx.say("insert failed: "..err) end
             ngx.say(r)
 
+            local update = {}
+            update["$pop"] = {tab=1}
+            r,err = col:update({name="dog"},update, nil, nil, true)
+            if not r then ngx.say("update failed: "..err) end
+            r,err = col:update({name="dog"},update, nil, nil, true)
+            if not r then ngx.say("update failed: "..err) end
+
             r = col:find_one({name="dog"})
-            ngx.say(r["name"])
+            ngx.say(r["tab"][1])
 
             conn:close()
         ';
     }
+--- ONLY
 --- request
 GET /t
 --- response_body
 0
-dog
+nil
 --- no_error_log
 [error]
 
@@ -893,8 +901,8 @@ a25
             ngx.say(r)
 
             local update = {}
-            update["$set"] = {}
-            update["$set"]["tab.a"] = 2
+            update["$set"] = {["tab.a"] = 2}
+            --update["$set"]["tab.a"] = 2
             r,err = col:update({name="dog"},update, nil, nil, true)
             if not r then ngx.say("update failed: "..err) end
 
