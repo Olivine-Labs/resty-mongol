@@ -50,22 +50,26 @@ __DATA__
             if not r then ngx.say("insert failed: "..err) end
             ngx.say(r)
 
-            r = col:find({name="dog"})
+            r = col:find_one({name="dog"})
 
-            for i , v in r:pairs() do
-                ngx.say(v["_id"]:tostring())
-                ngx.say(v["_id"]:get_ts())
-                ngx.say(v["_id"]:get_hostname())
-                ngx.say(v["_id"]:get_pid())
-                ngx.say(v["_id"]:get_inc())
-                ngx.say(v["name"])
-            end
+            ngx.say(r["_id"].id)
+            ngx.say(r["_id"]:tostring())
+            ngx.say(r["_id"]:get_ts())
+            ngx.say(r["_id"]:get_hostname())
+            ngx.say(r["_id"]:get_pid())
+            ngx.say(r["_id"]:get_inc())
+            ngx.say(r["name"])
+
+            r = col:find_one({_id=r["id"]})
+            ngx.say(r["name"])
+
             conn:close()
         ';
     }
 --- request
 GET /t
 --- response_body_like
+dog
 dog
 --- no_error_log
 [error]

@@ -596,7 +596,7 @@ GET /t
             io.close(f)
 
             local gf = fs:find_one({filename="testfile"})
-            gf:write("abcdef", 2)
+            gf:write("abcdefgh", 2)
 
             f = io.open("/tmp/testfile", "wb")
             r = fs:get(f, {filename="testfile"})
@@ -607,7 +607,7 @@ GET /t
     }
 --- user_files
 >>> test.txt
-123
+12345
 --- request
 GET /t
 --- response_body
@@ -615,7 +615,7 @@ GET /t
 --- no_error_log
 --- output_files
 >>> /tmp/testfile chop
-12abcdef
+12abcdefgh
 --- no_error_log
 [error]
 
@@ -726,5 +726,88 @@ GET /t
 --- output_files
 >>> /tmp/testfile chop
 abc
+--- no_error_log
+[error]
+
+=== TEST 15: write chunk = 1, offset = 0, size = chunk size
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000)
+            local ok, err = conn:connect("10.6.2.51")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+            local fs = db:get_gridfs("fs")
+
+            r, err = fs:remove({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            local gridfs = fs:new({chunkSize = 20, filename = "testfile"})
+            local r, err = gridfs:write("ABCDEFGHIJKLMNOPQRST", 0) --gridfs.file_size)
+            ngx.say(r)
+
+            f = io.open("/tmp/testfile", "wb")
+            r = fs:get(f, {filename="testfile"})
+            if not r then ngx.say("get file failed: "..err) end
+            io.close(f)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+20
+--- output_files
+>>> /tmp/testfile chop
+ABCDEFGHIJKLMNOPQRST
+--- no_error_log
+[error]
+
+=== TEST 16: write chunk = 2, offset = chunk size, size = 2*chunk size
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000)
+            local ok, err = conn:connect("10.6.2.51")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+            local fs = db:get_gridfs("fs")
+
+            r, err = fs:remove({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            local gridfs = fs:new({chunkSize = 10, filename = "testfile"})
+            local r, err = gridfs:write("ABCDEFGHIJKLMNOPQRST", 10) --gridfs.file_size)
+            ngx.say(r)
+            ngx.say(err)
+
+            --f = io.open("/tmp/testfile", "wb")
+            --r = fs:get(f, {filename="testfile"})
+            --if not r then ngx.say("get file failed: "..err) end
+            --io.close(f)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+nil
+invalid offset
 --- no_error_log
 [error]

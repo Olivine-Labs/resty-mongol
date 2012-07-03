@@ -26,16 +26,20 @@ function gridfs_file_mt:write(buf, offset, size)
         --               chunk1 chunk2 chunk3
         -- old data      ====== ====== ======
         -- write buf            ====== ======
+        --
+        -- old data      ====== ====== ======
+        -- write buf     ====== 
+            
         cn = size/self.chunk_size
         for i = 1, cn do
             nv["$set"] = {data = get_bin_data(string.sub(buf, 
                             self.chunk_size*(i-1) + 1, 
                             self.chunk_size*(i-1) + self.chunk_size))}
             r, err = self.chunk_col:update({files_id = self.files_id, 
-                                            n = n+i-1}, nv, 0, 0, true)
+                                            n = n+i-1}, nv, 1, 0, true)
             if not r then return nil,"write failed: "..err end
         end
-
+        bn = size
     else
 
         if of + size > self.chunk_size then

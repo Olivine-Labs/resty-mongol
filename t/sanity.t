@@ -793,7 +793,6 @@ a20
             conn:close()
         ';
     }
---- ONLY
 --- request
 GET /t
 --- response_body
@@ -917,6 +916,59 @@ GET /t
 --- response_body
 0
 2
+--- no_error_log
+[error]
+
+=== TEST 20: access
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        access_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+            ok, err = conn:connect("10.6.2.51")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local col = db:get_col("test")
+
+            r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+
+            r, err = col:delete({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            local t = {a=1,b=2}
+            
+            r, err = col:insert({{name="dog",n="10"},tab=t}, nil, true)
+            if not r then ngx.say("insert failed: "..err) end
+
+            r = col:find_one({name="dog"})
+            ngx.ctx.foo = r
+        ';
+        content_by_lua '
+            local search = ngx.ctx.foo
+            for k,v in pairs(search) do
+                if type(v) ~= "table" then
+                    ngx.say( k.." -> "..v)
+                else
+                    ngx.say( k.." -> table")
+                    for i,j in pairs(v) do
+                        ngx.say(i.."->"..type(j))
+                    end
+                end
+            end
+        ';
+    }
+--- ONLY
+--- request
+GET /t
+--- response_body
+76
 --- no_error_log
 [error]
 
