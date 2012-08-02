@@ -44,7 +44,7 @@ it returns a connection object.
 ####ok,err = conn:connect(host, port)
 Default host and port is: `localhost` and `27017`.
 
-####ok,err = conn:settimeout(msec)
+####ok,err = conn:set_timeout(msec)
 Sets socket connecting, reading, writing timeout value, unit is milliseconds.
 
 In case of success, returns 1. In case of errors, returns nil with a string describing the error.
@@ -63,11 +63,6 @@ In case of success, returns times. In case of errors, returns nil with a string 
 Closes the connection.
 
 In case of success, returns 1. In case of errors, returns nil with a string describing the error.
-
-####conn:cmd(database_name, query, [collection])
-Returns the document
-or `nil , errmsg , return_document , responseFlags` on failure;
-where `responseFlags` is a table containing the fields `CursorNotFound, QueryFailure, ShardConfigStale, AwaitCapable`.
 
 ####bool, hosts = conn:ismaster()
 Returns a boolean indicating if this is the master server and a table of other hosts this server is replicating with

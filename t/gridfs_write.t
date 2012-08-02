@@ -768,6 +768,7 @@ GET /t
 --- output_files
 >>> /tmp/testfile chop
 ABCDEFGHIJKLMNOPQRST
+--- ONLY
 --- no_error_log
 [error]
 

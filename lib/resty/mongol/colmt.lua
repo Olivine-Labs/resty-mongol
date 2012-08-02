@@ -50,14 +50,15 @@ end
 local id = 0
 local function docmd ( conn , opcode , message ,  reponseTo )
     id = id + 1
-    local requestID = num_to_le_uint ( id )
+    local req_id = id
+    local requestID = num_to_le_uint ( req_id )
     reponseTo = reponseTo or "\255\255\255\255"
     opcode = num_to_le_uint ( assert ( opcodes [ opcode ] ) )
 
     local m = compose_msg ( requestID , reponseTo , opcode , message )
     local sent = assert ( conn.sock:send ( m ) )
 
-    return id , sent
+    return req_id , sent
 end
 
 local function read_msg_header ( sock )

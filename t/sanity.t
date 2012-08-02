@@ -430,7 +430,6 @@ cat
             for i = 1, 10 do
                 col:insert({{name="puppy"}})
             end
-
             r = col:find({name="puppy"}, nil, 4)
             local j = 0
             for i , v in r:pairs() do
@@ -952,23 +951,14 @@ GET /t
         ';
         content_by_lua '
             local search = ngx.ctx.foo
-            for k,v in pairs(search) do
-                if type(v) ~= "table" then
-                    ngx.say( k.." -> "..v)
-                else
-                    ngx.say( k.." -> table")
-                    for i,j in pairs(v) do
-                        ngx.say(i.."->"..type(j))
-                    end
-                end
-            end
+            ngx.say(search["n"])
         ';
     }
 --- ONLY
 --- request
 GET /t
 --- response_body
-76
+10
 --- no_error_log
 [error]
 

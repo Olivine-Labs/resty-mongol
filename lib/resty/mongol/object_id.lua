@@ -59,7 +59,6 @@ end
 local pid = 0
 local function get_os_pid()
     if pid ~= 0 then return pid end
-
     pid = ngx.var.pid
     pid = num_to_le_uint(pid, 2)
     return pid
