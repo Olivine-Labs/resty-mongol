@@ -116,8 +116,7 @@ function colmethods:insert(docs, continue_on_error, safe)
     local m = num_to_le_uint(flags)..full_collection_name(self, self.col)
                 ..t_concat(t)
     local id, send = docmd(self.conn, "INSERT", m)
-    local sent
-    if sent == 0 then
+    if send == 0 then
         return nil, "send message failed"   
     end
 
@@ -148,8 +147,7 @@ function colmethods:update(selector, update, upsert, multiupdate, safe)
     local m = "\0\0\0\0" .. full_collection_name(self, self.col) 
                 .. num_to_le_uint ( flags ) .. selector .. update
     local id, send = docmd(self.conn, "UPDATE", m)
-    local sent
-    if sent == 0 then
+    if send == 0 then
         return nil, "send message failed"   
     end
 
