@@ -264,6 +264,7 @@ get primary
 === TEST 8: db auth
 --- http_config eval: $::HttpConfig
 --- config
+    lua_code_cache off;
     location /t {
         content_by_lua '
             local mongo = require "resty.mongol"
@@ -954,7 +955,6 @@ GET /t
             ngx.say(search["n"])
         ';
     }
---- ONLY
 --- request
 GET /t
 --- response_body

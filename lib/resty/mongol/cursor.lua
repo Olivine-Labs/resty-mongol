@@ -49,7 +49,7 @@ function cursor_methods:sort(field, size)
     if size < 2 then return nil, "number of object must > 1" end
     if not field then return nil, "field should not be nil" end
 
-    local key, asc
+    local key, asc, t
     for k,v in pairs(field) do
         key = k
         asc = v

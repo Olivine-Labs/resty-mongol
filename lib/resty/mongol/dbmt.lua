@@ -13,8 +13,8 @@ local dbmethods = { }
 local dbmt = { __index = dbmethods }
 
 function dbmethods:cmd(q)
-    collection = "$cmd"
-    col = self:get_col(collection)
+    local collection = "$cmd"
+    local col = self:get_col(collection)
     
     local c_id , r , t = col:query(q)
 

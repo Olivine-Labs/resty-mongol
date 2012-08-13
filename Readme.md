@@ -124,7 +124,7 @@ Returns number of rows been updated or nil for error.
 Returns 0 for success, or nil with error message.
 
  - continue_on_error, if set, the database will not stop processing a bulk insert if one fails (eg due to duplicate IDs).
- - safe can be a boolean or integer, defaults to `0`. If `1`, the program will issue a cmd `getlasterror` to server to query the result. If `false`, return value `n` would always be `-1`
+ - safe can be a boolean or integer, defaults to `0` or `false`. If `1` or ``true`, the program will issue a cmd `getlasterror` to server to query the result. If `false`, return value `n` would always be `-1`
 
 ####n, err = col:delete(selector, singleRemove, safe)
 Returns number of rows been deleted, or nil with error message.

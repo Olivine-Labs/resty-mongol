@@ -13,7 +13,6 @@ local connmt = { __index = connmethods }
 
 local dbmt = require ( mod_name .. ".dbmt" )
 
-
 function connmethods:ismaster()
     local db = self:new_db_handle("admin")
     local r, err = db:cmd({ismaster = true}) 
@@ -134,3 +133,8 @@ function new(self)
         } , connmt )
 end
 
+-- to prevent use of casual module global variables
+getmetatable(resty.mongol).__newindex = function (table, key, val)
+    error('attempt to write to undeclared variable "' .. key .. '": '
+            .. debug.traceback())
+end

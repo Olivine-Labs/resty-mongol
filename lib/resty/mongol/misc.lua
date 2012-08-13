@@ -65,10 +65,5 @@ end
 return {
     pairs_start = pairs_start ;
     attachpairs_start = attachpairs_start ;
-    opcodes = opcodes;
-    compose_msg = compose_msg;
-    full_collection_name = full_collection_name;
-    docmd = docmd;
-    handle_reply = handle_reply;
 }
 
