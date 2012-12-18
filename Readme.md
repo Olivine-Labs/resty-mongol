@@ -256,11 +256,12 @@ Example
 For Test Case
 --------------------
 #####mongo config:
-        config = {_id: 'testset', members: [
-                          {_id: 0, host: '10.6.2.51:27017'},
-                          {_id: 1, host: '10.6.2.51:27018'},
-                          {_id: 2, host: '10.6.2.51:27019'}]
-                }
+    > config = {_id: 'testset', members: [
+              {_id: 0, host: '10.6.2.51:27017'},
+              {_id: 1, host: '10.6.2.51:27018'},
+              {_id: 2, host: '10.6.2.51:27019'}]
+        }
+    > rs.initiate(config);
 
 #####start-mongo.sh:
         nohup bin/mongod --dbpath=/data/57cbd36d-5b70-4888-8537-bea71119363e/mongodb --oplogSize 10 --rest --replSet testset --port 27017 --keyFile key.file &
@@ -268,4 +269,5 @@ For Test Case
         nohup bin/mongod --dbpath=/data/8ee9efc0-a854-4c45-8893-7b4cb9ed0e5f/mongodb --oplogSize 10 --rest --replSet testset --port 27019 --keyFile key.file &
 
 #####mongo user:
-        > db.addUser("admin","admin")
+    > use test
+    > db.addUser("admin","admin")
