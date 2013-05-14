@@ -3,6 +3,7 @@ Name
 lua-resty-mongol - Lua Mongodb driver for ngx_lua base on the cosocket API
 
 Thanks to project Mongol by daurnimator
+
 copied and relicensed with permission from git://github.com/bigplum/lua-resty-mongol.git
 
 Dependencies
