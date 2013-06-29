@@ -55,7 +55,7 @@ local function docmd ( conn , opcode , message ,  reponseTo )
 
   local m = compose_msg ( requestID , reponseTo , opcode , message )
   local sent, reason = conn.sock:send(m)
-  if not result then
+  if not sent then
     error({"Could not connect to database. Reason : "..reason})
   end
   return req_id, sent
