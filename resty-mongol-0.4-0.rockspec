@@ -1,8 +1,8 @@
 package = "resty-mongol"
-version = "0.3-0"
+version = "0.4-0"
 source = {
-  url = "https://github.com/Olivine-Labs/resty-mongol/archive/v0.3.tar.gz",
-  dir = "resty-mongol-0.3"
+  url = "https://github.com/Olivine-Labs/resty-mongol/archive/v0.4.tar.gz",
+  dir = "resty-mongol-0.4"
 }
 description = {
   summary = "Mongo driver for openresty.",

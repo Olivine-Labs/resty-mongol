@@ -19,6 +19,7 @@ local function new_cursor(col, query, returnfields, num_each_query)
     done = false ;
     i = 0;
     limit_n = 0;
+    skip_n = 0;
     num_each = num_each_query;
   } , cursor_mt )
 end
@@ -40,8 +41,12 @@ function cursor_methods:limit(n)
   self.limit_n = n
 end
 
---todo
---function cursor_methods:skip(n)
+function cursor_methods:skip(n)
+  assert(n)
+  self.skip_n = n
+  self.results = {}
+  self.i = n
+end
 
 function cursor_methods:sort(field, size)
   size = size or 10000
@@ -68,9 +73,9 @@ function cursor_methods:sort(field, size)
     end
   end
 
-  if #self.results > self.i then
+  if #self.results > self.i - self.skip_n then
     table.sort(self.results, sort_f)
-  elseif #self.results == 0 and self.i == 0 then
+  elseif #self.results == 0 and self.i - self.skip_n == 0 then
     if self.num_each == 0 and self.limit_n ~= 0 then
       size = self.limit_n
     elseif self.num_each ~= 0 and self.limit_n == 0 then
@@ -81,7 +86,7 @@ function cursor_methods:sort(field, size)
     end
 
     self.id, self.results, t = self.col:query(self.query, 
-    self.returnfields, self.i, size)
+    self.returnfields, self.i - self.skip_n, size)
     table.sort(self.results, sort_f)
   else
     return nil, "sort must be an array"
@@ -90,13 +95,13 @@ function cursor_methods:sort(field, size)
 end
 
 function cursor_methods:next()
-  if self.limit_n > 0 and self.i >= self.limit_n then return nil end
+  if self.limit_n > 0 and self.i- self.skip_n >= self.limit_n then return nil end
 
   local v = self.results [ self.i + 1 ]
   if v ~= nil then
     self.i = self.i + 1
-    self.results [ self.i ] = nil
-    return self.i , v
+    self.results [ self.i - self.skip_n ] = nil
+    return self.i - self.skip_n , v
   end
 
   if self.done then return nil end
