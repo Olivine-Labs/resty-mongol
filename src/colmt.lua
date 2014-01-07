@@ -94,7 +94,7 @@ local function handle_reply ( conn , req_id , offset_i )
 
   local r = { }
   for i = 1 , t.numberReturned do
-    r [ i + offset_i ] = from_bson ( get )
+    r [ i ] = from_bson ( get )
   end
 
   return cursorid , r , t

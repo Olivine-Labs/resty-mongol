@@ -10,7 +10,7 @@ local cursor_mt = { __index = cursor_methods }
 local function new_cursor(col, query, returnfields, num_each_query)
   return setmetatable ( {
     col = col ;
-    query = query ;
+    query = { ['$query'] = query} ;
     returnfields = returnfields ;
 
     id = false ;
@@ -39,65 +39,25 @@ end
 function cursor_methods:limit(n)
   assert(n)
   self.limit_n = n
+  return limit
 end
 
 function cursor_methods:skip(n)
   assert(n)
   self.skip_n = n
-  self.results = {}
   self.i = n
+  return self
 end
 
-function cursor_methods:sort(field, size)
-  size = size or 10000
-  if size < 2 then return nil, "number of object must > 1" end
-  if not field then return nil, "field should not be nil" end
-
-  local key, asc, t
-  for k,v in pairs(field) do
-    key = k
-    asc = v
-    break
-  end
-  if asc ~= 1 and asc ~= -1 then return nil, "order must be 1 or -1" end
-
-  local sort_f = 
-  function(a, b) 
-    if not a and not b then return false end
-    if not a then return true end
-    if not b then return false end
-    if asc == 1 then
-      return a[key] < b[key]
-    else
-      return a[key] > b[key]
-    end
-  end
-
-  if #self.results > self.i - self.skip_n then
-    table.sort(self.results, sort_f)
-  elseif #self.results == 0 and self.i - self.skip_n == 0 then
-    if self.num_each == 0 and self.limit_n ~= 0 then
-      size = self.limit_n
-    elseif self.num_each ~= 0 and self.limit_n == 0 then
-      size = self.num_each
-    else
-      size = (self.num_each < self.limit_n 
-      and self.num_each) or self.limit_n
-    end
-
-    self.id, self.results, t = self.col:query(self.query, 
-    self.returnfields, self.i - self.skip_n, size)
-    table.sort(self.results, sort_f)
-  else
-    return nil, "sort must be an array"
-  end
-  return self.results
+function cursor_methods:sort(fields)
+  self.query["$orderby"] = fields
+  return self
 end
 
 function cursor_methods:next()
-  if self.limit_n > 0 and self.i- self.skip_n >= self.limit_n then return nil end
+  if self.limit_n > 0 and self.i - self.skip_n >= self.limit_n then return nil end
 
-  local v = self.results [ self.i + 1 ]
+  local v = self.results [ self.i - self.skip_n + 1 ]
   if v ~= nil then
     self.i = self.i + 1
     self.results [ self.i - self.skip_n ] = nil
