@@ -243,11 +243,20 @@ function colmethods:insert(docs, continue_on_error, safe)
   end
 
   function colmethods:count(query)
+    local oldpairs = pairs
+    pairs = function(t)
+      local mt = getmetatable(t)
+      if mt and mt.__pairs then
+        return mt.__pairs(t)
+      else
+        return oldpairs(t)
+      end
+    end
     local r, err = self.db_obj:cmd(attachpairs_start({
-      count = self.col;
-      query = query or { } ;
-    } , "count" ) )
-
+      count = self.col,
+      query = next(query) and query or nil
+    }, "count"))
+    pairs = oldpairs
     if not r then
       return nil, err
     end

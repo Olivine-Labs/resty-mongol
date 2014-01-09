@@ -54,6 +54,10 @@ function cursor_methods:sort(fields)
   return self
 end
 
+function cursor_methods:count()
+  col:count(self.query["$query"])
+end
+
 function cursor_methods:next()
   if self.limit_n > 0 and self.i - self.skip_n >= self.limit_n then return nil end
 
