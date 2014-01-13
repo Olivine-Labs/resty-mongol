@@ -90,7 +90,7 @@ function cursor_methods:next()
 end
 
 function cursor_methods:pairs( )
-  return self.next, self
+  return function() return self:next() end, self
 end
 
 return new_cursor
