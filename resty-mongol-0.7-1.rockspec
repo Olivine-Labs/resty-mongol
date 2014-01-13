@@ -1,5 +1,5 @@
 package = "resty-mongol"
-version = "0.7-0"
+version = "0.7-1"
 source = {
   url = "https://github.com/Olivine-Labs/resty-mongol/archive/v0.7.tar.gz",
   dir = "resty-mongol-0.7"
@@ -28,6 +28,5 @@ build = {
     ["resty-mongol.misc"]       = "src/misc.lua",
     ["resty-mongol.object_id"]  = "src/object_id.lua",
     ["resty-mongol.bson"]       = "src/bson.lua",
-
   }
 }
