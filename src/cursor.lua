@@ -55,7 +55,7 @@ function cursor_methods:sort(fields)
 end
 
 function cursor_methods:count()
-  col:count(self.query["$query"])
+  return self.col:count(self.query['$query'])
 end
 
 function cursor_methods:next()
