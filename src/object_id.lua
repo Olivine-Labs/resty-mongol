@@ -50,9 +50,9 @@ if hasposix then
 else
   machineid = assert(io.popen("uname -n")):read("*l")
 end
-machineid = ngx.md5_bin(machineid):sub(1, 3)
+machineid = ngx and ngx.md5_bin(machineid):sub(1, 3) or require 'md5'.sum(machineid):sub(1, 3)
 
-local pid = num_to_le_uint(ngx.var.pid, 2)
+local pid = ngx and num_to_le_uint(ngx.var.pid, 2) or num_to_le_uint(1)
 
 local inc = 0
 local function generate_id ( )

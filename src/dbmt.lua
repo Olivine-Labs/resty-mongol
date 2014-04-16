@@ -4,7 +4,8 @@ local misc = require ( mod_name .. ".misc" )
 local attachpairs_start = misc.attachpairs_start
 
 local colmt = require ( mod_name .. ".colmt" )
-local gridfs = require ( mod_name .. ".gridfs" )
+local _gridfs
+local gridfs = function() if not _gridfs then _gridfs = require ( mod_name .. ".gridfs" ) end return _gridfs end
 
 local dbmethods = { }
 local dbmt = { __index = dbmethods }
@@ -92,7 +93,7 @@ function dbmethods:get_gridfs(fs)
     db = self.db;
     file_col = self:get_col(fs..".files");
     chunk_col = self:get_col(fs..".chunks");
-  } , gridfs)
+  } , gridfs())
 end
 
 return dbmt
