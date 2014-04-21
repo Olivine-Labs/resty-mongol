@@ -1,7 +1,6 @@
 local mod_name = (...):match ( "^(.*)%..-$" )
 
-local md5 = require "resty.md5"
-local str = require "resty.string"
+local md5 = require "crypto".digest
 local bson = require ( mod_name .. ".bson" )
 local object_id = require ( mod_name .. ".object_id" )
 local gridfs_file= require ( mod_name .. ".gridfs_file" )
@@ -23,6 +22,9 @@ function gridfs_mt:find_one(fields)
     file_size = r.length;
     file_md5 = r.md5;
     file_name = r.filename;
+    file_metadata = r.metadata;
+    chunk_cache_num = 0;
+    chunk_cache = {};
   }, gridfs_file)
 end
 
@@ -80,14 +82,14 @@ end
 
 function gridfs_mt:insert(fh, meta, safe)
   meta = meta or {}
-  meta.chunkSize = meta.chunkSize or 256*1024
+  meta.chunkSize = meta.chunkSize or 255*1024
   meta._id = meta._id or object_id.new()
-  meta.filename = meta.filename or meta._id:tostring()
+  meta.filename = meta.filename or type(meta._id) == "table" and meta._id:tostring()
 
   local n = 0
   local length = 0
   local r, err
-  local md5_obj = md5:new()
+  local md5_obj = md5.new("md5")
   while true do
     local bytes = fh:read(meta.chunkSize)
     if not bytes then break end
@@ -106,10 +108,10 @@ function gridfs_mt:insert(fh, meta, safe)
     length = length + string.len(bytes)
   end
 
-  local md5hex = str.to_hex(md5_obj:final())
+  local md5hex = md5_obj:final()
 
   meta.md5 = md5hex
-  meta.uploadDate = get_utc_date(ngx.time() * 1000)
+  meta.uploadDate = get_utc_date((ngx and ngx.time() or require 'socket'.gettime()) * 1000)
   meta.length = length
   r, err = self.file_col:insert({meta}, nil, safe)
   if safe and not r then return nil, err end

@@ -13,6 +13,7 @@ description = {
 }
 dependencies = {
   "lua >= 5.1",
+  "luacrypto >= 0.3.2"
 }
 build = {
   type = "builtin",
