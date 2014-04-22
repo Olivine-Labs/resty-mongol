@@ -7,40 +7,67 @@ local gridfs_file_mt = { }
 local gridfs_file = { __index = gridfs_file_mt }
 local get_bin_data = bson.get_bin_data
 
---write any cached data to mongo
-function gridfs_file_mt:flush()
-  local nv = {}
-  for _, v in pairs(self.chunk_cache) do
-    nv['$set'] = {data = get_bin_data(v.data)}
-    local r, err = self.chunk_col:update({files_id = self.files_id, 
-        n = v.n}, nv, 1, 0, false)
-  end
+function gridfs_file_mt:discard()
   self.chunk_cache = {}
   self.chunk_cache_num = 0
-  nv['$set'] = {
-    length = self.file_size,
-    md5 = 0
-  }
-  local r, err = self.file_col:update({_id = self.files_id}, nv, 0, 0, safe)
-  if not r and safe then return nil,"write failed: "..err end
+end
+
+--write any cached data to mongo
+function gridfs_file_mt:flush()
+  if self.chunk_cache_num > 0 then
+    for n, v in pairs(self.chunk_cache) do
+      local r, err = self.chunk_col:update(
+      {
+        files_id = self.files_id,
+        n = n
+      },
+      {
+        ['$set'] = {data = get_bin_data(v.data)}
+      },
+      1, 0, false)
+    end
+    self:discard()
+    local r, err = self.file_col:update(
+    {
+      _id = self.files_id
+    },
+    {
+      ['$set'] = {
+        length = self.file_size,
+        md5 = 0
+      }
+    },
+    0, 0, false)
+    if not r and safe then return nil,"write failed: "..err end
+  end
+  return true
 end
 
 function gridfs_file_mt:get_chunk(n)
-  local od = nil
-  if self.chunk_cache[n] then
-    od = self.chunk_cache[n]
-  else
+  local od = self.chunk_cache[n]
+  if not od then
     od = self.chunk_col:find_one({files_id = self.files_id, n = n})
-    if not od then
+    if not od or not od.data then
       od = {
-        data = "",
-        n = n
+        data = ""
       }
     end
-    self.chunk_cache[n] = od
-    self.chunk_cache_num = self.chunk_cache_num + 1
+    self:set_chunk(n, od.data)
   end
   return od
+end
+
+function gridfs_file_mt:set_chunk(n, data)
+  if self.chunk_cache_num >= 50 then
+    self:flush()
+  end
+  local chunk = self.chunk_cache[n]
+  if not chunk then
+    chunk = {}
+    self.chunk_cache_num = self.chunk_cache_num + 1
+  end
+  chunk.data = data
+  self.chunk_cache[n] = chunk
 end
 
 -- write size bytes from the buf string into mongo, by the offset 
@@ -57,25 +84,11 @@ function gridfs_file_mt:write(buf, offset, size, safe)
   local of = offset % self.chunk_size
   local n = math.floor(offset/self.chunk_size)
 
+  --if write size matches up to chunk size
   if of == 0 and size % self.chunk_size == 0 then
-    --               chunk1 chunk2 chunk3
-    -- old data      ====== ====== ======
-    -- write buf            ====== ======
-    --
-    -- old data      ====== ====== ======
-    -- write buf     ======
-
     cn = size/self.chunk_size
     for i = 1, cn do
-      self.chunk_cache[n+i-1] = {
-        n=n+i-1,
-        data = string.sub(buf, self.chunk_size*(i-1) + 1, self.chunk_size*(i-1) + self.chunk_size)
-      }
-      if self.chunk_cache_num >= 50 then
-        self:flush()
-      else
-        self.chunk_cache_num = self.chunk_cache_num + 1
-      end
+      self:set_chunk(n+i-1, string.sub(buf, self.chunk_size*(i-1) + 1, self.chunk_size*(i-1) + self.chunk_size))
     end
     bn = size
   else
@@ -130,30 +143,23 @@ function gridfs_file_mt:write(buf, offset, size, safe)
           t = string.sub(buf, 1, self.chunk_size)
           bn = bn + #t --self.chunk_size
         end
-        od.data = t
       elseif i == cn then
         od = self:get_chunk(n+i-1)
         if od then
-          od.data = string.sub(buf, bn + 1, size) 
+          t = string.sub(buf, bn + 1, size) 
           .. string.sub(od.data, size - bn + 1)
         else
-          od.data = string.sub(buf, bn + 1, size) 
+          t = string.sub(buf, bn + 1, size) 
         end
         bn = size
       else
-        self.chunk_cache[n+i-1] = {
-          data = string.sub(buf, bn + 1, bn + self.chunk_size),
-          n = n+i-1
-        }
-        self.chunk_cache_num = self.chunk_cache_num + 1
+        t = string.sub(buf, bn + 1, bn + self.chunk_size)
         bn = bn + self.chunk_size
       end
+      self:set_chunk(n+i-1, t)
     end
   end
 
-  if self.chunk_cache_num > 50 then
-    self:flush()
-  end
   if offset + size > self.file_size then
     self.file_size = size + offset
   end
@@ -176,7 +182,7 @@ function gridfs_file_mt:read(size, offset)
   local bytes = ""
   local rn = 0
   while true do
-    r = self.chunk_col:find_one({files_id = self.files_id, n = n})
+    r = self:get_chunk(n)
     if not r then return nil, "read chunk failed" end
     if size - rn < self.chunk_size then
       bytes = bytes .. string.sub(r.data, 1, size - rn)
@@ -197,17 +203,21 @@ function gridfs_file_mt:update_md5()
   local r, i, err
 
   for i = 0, n do
-    r = self.chunk_col:find_one({files_id = self.files_id, n = i})
+    r = self:get_chunk(i)
     if not r then return false, "read chunk failed" end
 
     md5_obj:update(r.data)
   end
   local md5hex = md5_obj:final()
 
-  local nv = {}
-  nv["$set"] = {md5 = md5hex}
   self.file_md5 = md5hex
-  r,err = self.file_col:update({_id = self.files_id}, nv, 0, 0, true)
+  r,err = self.file_col:update(
+  {
+    _id = self.files_id
+  },
+  {
+    ['$set'] = {md5 = md5hex}
+  }, 0, 0, true)
   if not r then return false, "update failed: "..err end
   return true
 end
