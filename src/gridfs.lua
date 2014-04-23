@@ -23,6 +23,7 @@ function gridfs_mt:find_one(fields)
     file_md5 = r.md5;
     file_name = r.filename;
     file_metadata = r.metadata;
+    chunk_cache_max = 40;
     chunk_cache_num = 0;
     chunk_cache = {};
   }, gridfs_file)
@@ -47,27 +48,30 @@ function gridfs_mt:remove(fields, continue_on_err, safe)
   end
 
   local cursor = self.file_col:find(fields, {_id=1})
+  local ids = {}
   for k,v in cursor:pairs() do
-    r,err = self.chunk_col:delete({files_id=v._id}, continue_on_err, safe)
-    if not r then return nil, "remove chunks failed: "..err end
-    r,err = self.file_col:delete({_id=v._id}, continue_on_err, safe)
-    if not r then return nil, "remove files failed: "..err end
     n = n + 1
+    ids[#ids+1] = v._id
   end
+  local q = {['$in'] = ids}
+  r,err = self.chunk_col:delete({files_id=q}, continue_on_err, safe)
+  if not r then return nil, "remove chunks failed: "..err end
+  r,err = self.file_col:delete({_id=q}, continue_on_err, safe)
+  if not r then return nil, "remove files failed: "..err end
   return n
 end
 
-function gridfs_mt:new(meta)
+function gridfs_mt:new(meta, safe)
   meta = meta or {}
   meta._id = meta._id or object_id.new()
-  meta.chunkSize = meta.chunkSize or 256*1024
-  meta.filename = meta.filename or meta._id:tostring()
+  meta.chunkSize = meta.chunkSize or 255*1024
+  meta.filename = meta.filename or type(meta._id) == "table" and meta._id:tostring()
 
   meta.md5 = 0
-  meta.uploadDate = get_utc_date(ngx.time() * 1000)
+  meta.uploadDate = get_utc_date((ngx and ngx.time() or os.time()) * 1000)
   meta.length = 0
-  local r, err = self.file_col:insert({meta}, nil, true)
-  if not r then return nil, err end
+  local r, err = self.file_col:insert({meta}, nil, safe)
+  if not r and safe then return nil, err end
 
   return setmetatable({
     file_col = self.file_col;
@@ -77,6 +81,9 @@ function gridfs_mt:new(meta)
     file_size = 0;
     file_md5 = 0;
     file_name = meta.filename;
+    chunk_cache_max = 40;
+    chunk_cache_num = 0;
+    chunk_cache = {};
   }, gridfs_file)
 end
 

@@ -58,16 +58,17 @@ function gridfs_file_mt:get_chunk(n)
 end
 
 function gridfs_file_mt:set_chunk(n, data)
-  if self.chunk_cache_num >= 50 then
-    self:flush()
-  end
   local chunk = self.chunk_cache[n]
   if not chunk then
+    if self.chunk_cache_num >= self.chunk_cache_max then
+      self:flush()
+    end
+
     chunk = {}
+    self.chunk_cache[n] = chunk
     self.chunk_cache_num = self.chunk_cache_num + 1
   end
   chunk.data = data
-  self.chunk_cache[n] = chunk
 end
 
 -- write size bytes from the buf string into mongo, by the offset 
