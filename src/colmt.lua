@@ -136,6 +136,35 @@ function colmethods:insert(docs, continue_on_error, safe)
     return -1 end
   end
 
+  function colmethods:update_all(updates, ordered, wc)
+    local i = 0
+    local vupdates = {}
+    for _, v in pairs(updates) do
+      vupdates[i] = v
+      i = i+1
+    end
+    local oldpairs = pairs
+    pairs = function(t)
+      local mt = getmetatable(t)
+      if mt and mt.__pairs then
+        return mt.__pairs(t)
+      else
+        return oldpairs(t)
+      end
+    end
+    local r, err = self.db_obj:cmd(attachpairs_start({
+      update = self.col,
+      updates = vupdates,
+      ordered = ordered,
+      writeConcern = wc
+    }, "update"))
+    pairs = oldpairs
+    if not r then
+      return nil, err
+    end
+    return r
+  end
+
   function colmethods:update(selector, update, upsert, multiupdate, safe)
     safe = safe or 0
     upsert = upsert or 0
@@ -145,7 +174,7 @@ function colmethods:insert(docs, continue_on_error, safe)
     selector = to_bson(selector)
     update = to_bson(update)
 
-    local m = "\0\0\0\0" .. full_collection_name(self, self.col) 
+    local m = "\0\0\0\0" .. full_collection_name(self, self.col)
     .. num_to_le_uint ( flags ) .. selector .. update
     local id, send = docmd(self.conn, "UPDATE", m)
     if send == 0 then

@@ -23,7 +23,7 @@ function gridfs_mt:find_one(fields)
     file_md5 = r.md5;
     file_name = r.filename;
     file_metadata = r.metadata;
-    chunk_cache_max = 40;
+    chunk_cache_max = 100;
     chunk_cache_num = 0;
     chunk_cache = {};
   }, gridfs_file)
@@ -81,7 +81,7 @@ function gridfs_mt:new(meta, safe)
     file_size = 0;
     file_md5 = 0;
     file_name = meta.filename;
-    chunk_cache_max = 40;
+    chunk_cache_max = 100;
     chunk_cache_num = 0;
     chunk_cache = {};
   }, gridfs_file)
