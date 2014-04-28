@@ -15,18 +15,23 @@ end
 --write any cached data to mongo
 function gridfs_file_mt:flush()
   if self.chunk_cache_num > 0 then
+    local updates = {}
     for n, v in pairs(self.chunk_cache) do
-      local r, err = self.chunk_col:update(
-      {
-        files_id = self.files_id,
-        n = n
-      },
-      {
-        ['$set'] = {data = get_bin_data(v.data)}
-      },
-      1, 0, false)
+      updates[#updates+1] = {
+        q = {
+          files_id = self.files_id,
+          n = n
+        },
+        u = {
+          ['$set'] = {data = get_bin_data(v.data)}
+        },
+        upsert = true,
+        multi = false
+      }
     end
     self:discard()
+    local r, err = self.chunk_col:update_all(updates, false, {w = "majority"})
+    if not r and safe then return nil,"write failed: "..err end
     local r, err = self.file_col:update(
     {
       _id = self.files_id
