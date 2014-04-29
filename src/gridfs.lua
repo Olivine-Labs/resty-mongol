@@ -29,6 +29,29 @@ function gridfs_mt:find_one(fields)
   }, gridfs_file)
 end
 
+function gridfs_mt:find(query, fields)
+  local r = self.file_col:find(query, fields)
+  if not r then return nil end
+
+  local ret = {}
+  for _, v in r:pairs() do
+    ret[#ret+1] = setmetatable({
+      file_col = self.file_col;
+      chunk_col = self.chunk_col;
+      chunk_size = v.chunkSize;
+      files_id = v._id;
+      file_size = v.length;
+      file_md5 = v.md5;
+      file_name = v.filename;
+      file_metadata = v.metadata;
+      chunk_cache_max = 100;
+      chunk_cache_num = 0;
+      chunk_cache = {};
+    }, gridfs_file)
+  end
+  return ret
+end
+
 function gridfs_mt:get(fh, fields)
   local f = self:find_one(fields)
   if not f then return nil, "file not found" end
