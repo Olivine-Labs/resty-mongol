@@ -81,17 +81,20 @@ function dbmethods:get_col(collection)
   } , colmt )
 end
 
-function dbmethods:get_gridfs(fs)
+function dbmethods:get_gridfs(fs, files_col, chunks_col)
   if not fs then
     return nil, "fs name needed"
   end
+  
+  files_col = files_col or "files"
+  chunks_col = chunks_col or "chunks"
 
   return setmetatable({
     conn = self.conn;
     db_obj = self;
     db = self.db;
-    file_col = self:get_col(fs..".files");
-    chunk_col = self:get_col(fs..".chunks");
+    file_col = self:get_col(fs.."."..files_col);
+    chunk_col = self:get_col(fs.."."..chunks_col);
   } , gridfs)
 end
 
