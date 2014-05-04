@@ -22,7 +22,7 @@ local new_object_id = obid.new
 local object_id_mt = obid.metatable
 local binary_mt = {}
 local utc_date = {}
-
+local null = {}
 
 local function read_document ( get , numerical )
   local bytes = le_uint_to_num ( get ( 4 ) )
@@ -137,6 +137,8 @@ local function pack ( k , v )
   elseif mt == binary_mt then
     return "\5" .. k .. "\0" .. num_to_le_uint(string.len(v.v)) .. 
     v.st .. v.v
+  elseif v == null then
+    return "\10" .. k .. "\0"
   elseif ot == "table" then
     local doc , array = to_bson(v)
     if array then
@@ -208,4 +210,5 @@ return {
   to_bson = to_bson ;
   get_bin_data = get_bin_data;
   get_utc_date = get_utc_date;
+  null = null;
 }
