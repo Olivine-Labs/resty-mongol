@@ -1,6 +1,6 @@
 Name
 ======
-lua-resty-mongol - Lua Mongodb driver for ngx_lua base on the cosocket API
+lua-resty-mongol - Native Lua Mongodb driver which supports both luasocket and ngx_lua based on the cosocket API
 
 Thanks to project Mongol by daurnimator
 
@@ -17,16 +17,16 @@ luajit(or `attempt to yield across metamethod/C-call boundary error` will be pro
 Installation
 ======
 
-		make install
+		luarocks install resty-mongol --server=http://rocks.moonscript.org
 
 Usage
 ======
 
-Add package path into nginx.conf.
+Add package path into nginx.conf. (only if not using luarocks)
 
         lua_package_path '/usr/local/openresty/lualib/?/init.lua;;';
 
-or into lua files before requiring.
+or into lua files before requiring. (only if not using luarocks)
 
         local p = "/usr/local/openresty/lualib/"
         local m_package_path = package.path
@@ -122,6 +122,18 @@ Returns number of rows been updated or nil for error.
  - multiupdate, if set to `1`, the database will update all matching objects in the collection. Otherwise only updates first matching doc, default to `0`. Multi update only works with $ operators.
  - safe can be a boolean or integer, defaults to `0`. If `1`, the program will issue a cmd `getlasterror` to server to query the result. If `false`, return value `n` would always be `-1`
 
+####n, err = col:update_all(queries, ordered, writeConcern)
+Batch update, returns update result document as described in mongo docs. (Only usable in 2.6+)
+
+ - queries should be structured as {{ q = {}, u = {}, upsert = <boolean>, multi = <boolean>}} where q is the selector, u is the update, and upsert and multi are identical to normal update.
+ - ordered, if true, tells the server to execute the operations in the order they are given in the list. If false, the database is free to parallelize the operations but does not guarantee order.
+ - writeConcern is a write concern document {w=<number>, j=<boolean>, etc}
+
+####n, err = col:aggregate(pipeline)
+Aggregation. Returns a result document. See mongo aggregation db command docs for more info.
+
+ - pipeline is an ordered list of aggregation pipeline functions.
+
 ####n, err = col:insert(docs, continue_on_error, safe)
 Returns 0 for success, or nil with error message.
 
@@ -189,6 +201,9 @@ _under developing_
 ####gridfs_file = gridfs:find_one(fields)
 Returns a gridfs file object.
 
+####gridfs_file = gridfs:find(fields)
+Returns a list of gridfs file objects.
+
 ####gridfs_file = gridfs:remove(fields, continue_on_err, safe)
 Returns number of files been deleted, or nil with error message.
 
@@ -224,6 +239,9 @@ Returns number of bytes writen into mongodb, or nil with error message.
 
  - offset is the file offset(should not beyond the end of the file), starting from 0.
  - size is the number of bytes to be writen.
+
+####gridfs_file:flush()
+Flushes cached data in memory to the database. Should always be called at the end of a file write.
 
 ####bool, err = gridfs_file:update_md5()
 Hashs the file content and updates the md5 in file collection.
