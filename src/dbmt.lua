@@ -55,14 +55,24 @@ function dbmethods:auth(username, password)
   end
 
   local digest = ngx.md5( r.nonce .. username .. pass_digest ( username , password ) )
-
+  local oldpairs = pairs
+  pairs = function(t)
+    local mt = getmetatable(t)
+    if mt and mt.__pairs then
+      return mt.__pairs(t)
+    else
+      return oldpairs(t)
+    end
+  end
   r, err = self:cmd(attachpairs_start({
-    authenticate = true ;
+    authenticate = 1 ;
     user = username ;
     nonce = r.nonce ;
     key = digest ;
   } , "authenticate" ) )
+  pairs = oldpairs
   if not r then
+    error(err)
     return nil, err
   end
   return 1
