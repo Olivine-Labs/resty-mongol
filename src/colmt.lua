@@ -306,9 +306,10 @@ function colmethods:insert(docs, continue_on_error, safe)
         return oldpairs(t)
       end
     end
+
     local r, err = self.db_obj:cmd(attachpairs_start({
       count = self.col,
-      query = query and next(query) or nil
+      query = query or nil
     }, "count"))
     pairs = oldpairs
     if not r then
