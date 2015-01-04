@@ -561,7 +561,7 @@ delete failed: (need to login|not authorized).*
             r = col:find_one({name="dog"})
             ngx.say(r["name"])
             ngx.say(r["tab"][1].a)
-            ngx.say(r["tab1"][0])
+            ngx.say(r["tab1"][1])
             ngx.say(r["tab2"][0])
             ngx.say(r["tab2"][2])
 
@@ -687,6 +687,7 @@ nil
             ngx.say(r["tab"][3])
             ngx.say(r["tab1"][2])
             ngx.say(r["tab1"][3])
+            ngx.say(r["tab1"][4])
             ngx.say(r["tab2"][4])
             ngx.say(r["tab2"][5])
 
@@ -701,6 +702,7 @@ GET /t
 1
 bb
 a3
+a11
 a12
 a13
 a24
@@ -847,3 +849,59 @@ GET /t
 --- no_error_log
 [error]
 
+=== TEST 22: array data from external app
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty-mongol"
+            conn = mongo()
+            conn:set_timeout(10000)
+            ok, err = conn:connect("127.0.0.1")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local col = db:get_col("test_external")
+
+            r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+
+            r = col:find_one({item="ABC1"})
+            ngx.say(r["item"])
+            ngx.say(r["details"]["model"])
+            ngx.say(r["details"]["manufacturer"])
+            for index, stock in ipairs(r["stock"]) do
+              ngx.say(index .. " size: " .. stock["size"] .. " qty: " .. stock["qty"])
+            end
+            for index, tag in ipairs(r["tags"]) do
+              ngx.say(index .. " " .. tag)
+            end
+            ngx.say(r["category"])
+            ngx.say(r["hash"]["0"])
+            ngx.say(r["hash"]["1"])
+            ngx.say(r["hash"]["2"])
+
+            conn:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+ABC1
+14Q3
+XYZ Company
+1 size: S qty: 25
+2 size: M qty: 50
+3 size: L qty: 75
+1 a
+2 b
+3 c
+clothing
+AA
+BB
+CC
+--- no_error_log
+[error]

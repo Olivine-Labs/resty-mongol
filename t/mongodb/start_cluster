@@ -28,7 +28,7 @@ sleep 1
 mongo $PWD/t/mongodb/setup_replicaset.js
 
 WAIT=0
-until mongo -host testset/127.0.0.1:27017 test t/mongodb/setup_user.js &>> $PWD/t/tmp/mongodb/setup_user.log; do
+until mongo --host testset/127.0.0.1:27017 test t/mongodb/setup_user.js &>> $PWD/t/tmp/mongodb/setup_user.log; do
   echo "Replicaset not up yet. Sleeping..."
   sleep 3
   WAIT=$[$WAIT+1]
@@ -37,5 +37,7 @@ until mongo -host testset/127.0.0.1:27017 test t/mongodb/setup_user.js &>> $PWD/
     exit 1
   fi
 done
+
+mongo --host testset/127.0.0.1:27017 -u admin -p admin test t/mongodb/setup_example_data.js
 
 echo "Replicaset up!"

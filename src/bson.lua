@@ -75,7 +75,7 @@ local function read_document ( get , numerical )
     end
 
     if numerical then
-      t [ tonumber ( e_name ) ] = v
+      t [ tonumber ( e_name ) + 1 ] = v
     else
       t [ e_name ] = v
     end
@@ -183,10 +183,14 @@ function to_bson(ob)
   elseif onlyarray then
     local r = { }
 
-    local low = 0
-    --if seen_n [ 0 ] then low = 0 end
+    local low = 1
+    if seen_n [ 0 ] then low = 0 end
     for i=low , high_n do
-      r [ i ] = pack ( i , seen_n [ i ] )
+      mongo_index = i
+      if low == 1 then
+        mongo_index = mongo_index - 1
+      end
+      r [ i ] = pack ( mongo_index , seen_n [ i ] )
     end
 
     m = t_concat ( r , "" , low , high_n )
