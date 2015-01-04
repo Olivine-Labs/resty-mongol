@@ -168,6 +168,7 @@ function gridfs_file_mt:write(buf, offset, size, safe)
 
   if offset + size > self.file_size then
     self.file_size = size + offset
+    self:flush()
   end
   return bn
 end
