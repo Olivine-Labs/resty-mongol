@@ -5,7 +5,7 @@ use Cwd qw(cwd);
 
 repeat_each(1);
 
-plan tests => repeat_each() * (4 * blocks()) - 1;
+plan tests => repeat_each() * (3 * blocks());
 
 my $pwd = cwd();
 
@@ -133,7 +133,7 @@ GET /t
 --- no_error_log
 [error]
 
-=== TEST 4: write chunk = 2, offset = 0
+=== TEST 3: write chunk = 2, offset = 0
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -187,7 +187,7 @@ abcabcdefdef34567890
 --- no_error_log
 [error]
 
-=== TEST 5: write chunk > 1, offset = 0
+=== TEST 4: write chunk > 1, offset = 0
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -241,7 +241,7 @@ abcabcdef01234567890
 --- no_error_log
 [error]
 
-=== TEST 6: write chunk > 1, offset > 0
+=== TEST 5: write chunk > 1, offset > 0
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -295,7 +295,7 @@ GET /t
 --- no_error_log
 [error]
 
-=== TEST 7: write chunk > 2, offset > 0
+=== TEST 6: write chunk > 2, offset > 0
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -349,7 +349,7 @@ GET /t
 --- no_error_log
 [error]
 
-=== TEST 8: write chunk > 2, offset > 0, size > file_size
+=== TEST 7: write chunk > 2, offset > 0, size > file_size
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -403,7 +403,7 @@ GET /t
 --- no_error_log
 [error]
 
-=== TEST 9: write chunk > 2, offset = 0, size > file_size
+=== TEST 8: write chunk > 2, offset = 0, size > file_size
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -457,7 +457,7 @@ abcdefghijklmnopqrstuvw
 --- no_error_log
 [error]
 
-=== TEST 10: write chunk > old chunk, offset = 0
+=== TEST 9: write chunk > old chunk, offset = 0
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -511,7 +511,7 @@ abcdefghijklmnopqrstuvw
 --- no_error_log
 [error]
 
-=== TEST 11: write chunk > old chunk, offset > 0
+=== TEST 10: write chunk > old chunk, offset > 0
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -565,7 +565,7 @@ GET /t
 --- no_error_log
 [error]
 
-=== TEST 12: write chunk = 1, offset > 0, size > file size
+=== TEST 11: write chunk = 1, offset > 0, size > file size
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -619,7 +619,7 @@ GET /t
 --- no_error_log
 [error]
 
-=== TEST 13: write and update md5
+=== TEST 12: write and update md5
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -678,7 +678,7 @@ GET /t
 [error]
 
 
-=== TEST 14: new and write and update md5
+=== TEST 13: new and write and update md5
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -729,7 +729,7 @@ abc
 --- no_error_log
 [error]
 
-=== TEST 15: write chunk = 1, offset = 0, size = chunk size
+=== TEST 14: write chunk = 1, offset = 0, size = chunk size
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -771,7 +771,7 @@ ABCDEFGHIJKLMNOPQRST
 --- no_error_log
 [error]
 
-=== TEST 16: write chunk = 2, offset = chunk size, size = 2*chunk size
+=== TEST 15: write chunk = 2, offset = chunk size, size = 2*chunk size
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
