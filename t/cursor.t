@@ -32,7 +32,7 @@ __DATA__
             local mongo = require "resty.mongol"
             conn = mongo:new()
             conn:set_timeout(10000) 
-            local ok, err = conn:connect("10.6.2.51")
+            local ok, err = conn:connect("127.0.0.1")
 
             if not ok then
                 ngx.say("connect failed: "..err)
@@ -86,9 +86,6 @@ GET /t
 3
 1
 2
-3
-4
-5
 --- no_error_log
 [error]
 
@@ -100,7 +97,7 @@ GET /t
             local mongo = require "resty.mongol"
             conn = mongo:new()
             conn:set_timeout(10000) 
-            local ok, err = conn:connect("10.6.2.51")
+            local ok, err = conn:connect("127.0.0.1")
 
             if not ok then
                 ngx.say("connect failed: "..err)
@@ -190,7 +187,7 @@ GET /t
             local mongo = require "resty.mongol"
             conn = mongo:new()
             conn:set_timeout(10000) 
-            local ok, err = conn:connect("10.6.2.51")
+            local ok, err = conn:connect("127.0.0.1")
 
             if not ok then
                 ngx.say("connect failed: "..err)
@@ -255,6 +252,79 @@ GET /t
 4
 5
 sort failed: sort must be an array
+--- no_error_log
+[error]
+
+=== TEST 4: cursor next over limit
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+            local ok, err = conn:connect("127.0.0.1")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+            local col = db:get_col("test")
+
+            r, err = col:delete({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            local i, j
+            local t = {}
+            for i = 1,10 do
+                j = 100 - i
+                table.insert(t, {name="dog",n=i,m=j})
+            end
+            r, err = col:insert(t, nil, true)
+            if not r then ngx.say("insert failed: "..err) end
+
+            r = col:find({name="dog"})
+            r:limit(3)
+            for i , v in r:pairs() do
+                ngx.say(v["n"])
+            end
+
+            k,v = r:next()
+            ngx.say(v)
+
+            r = col:find({name="dog"})
+            for i = 1, 10 do
+                k,v = r:next()
+                ngx.say(v["n"])
+            end
+
+            i,v = r:next()
+            ngx.say(v)
+
+            conn:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+1
+2
+3
+nil
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+nil
 --- no_error_log
 [error]
 

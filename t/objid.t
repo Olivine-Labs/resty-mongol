@@ -31,7 +31,7 @@ __DATA__
             local mongo = require "resty.mongol"
             conn = mongo:new()
             conn:set_timeout(10000) 
-            local ok, err = conn:connect("10.6.2.51")
+            local ok, err = conn:connect("127.0.0.1")
 
             if not ok then
                 ngx.say("connect failed: "..err)

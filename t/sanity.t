@@ -31,7 +31,7 @@ __DATA__
             local mongo = require "resty.mongol"
             conn = mongo:new()
             conn:set_timeout(10000) 
-            ok, err = conn:connect("10.6.2.51")
+            ok, err = conn:connect("127.0.0.1")
 
             if not ok then
                 ngx.say("connect failed: "..err)
@@ -62,38 +62,9 @@ __DATA__
 --- request
 GET /t
 --- response_body
-insert failed: unauthorized
+insert failed: need to login
 0
 dog
---- no_error_log
-[error]
-
-=== TEST 2: db auth failed
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
-            conn:set_timeout(1000) 
-
-            ok, err = conn:connect("10.6.2.51")
-            if not ok then
-                ngx.say("connect failed: "..err)
-            end
-
-            local db = conn:new_db_handle("test")
-            local r,err = db:auth("admin", "pass")
-            if not r then ngx.say(err) 
-            else
-                ngx.say(r)
-            end
-        ';
-    }
---- request
-GET /t
---- response_body
-auth fails
 --- no_error_log
 [error]
 
@@ -105,7 +76,7 @@ auth fails
             local mongo = require "resty.mongol"
             conn = mongo:new()
             conn:set_timeout(1000) 
-            ok, err = conn:connect("10.6.2.51", 27016)
+            ok, err = conn:connect("127.0.0.1", 27016)
 
             if not ok then
                 ngx.say("connect failed: "..err)
@@ -128,7 +99,7 @@ connect failed: connection refused
             conn = mongo:new()
             conn:set_timeout(1000) 
 
-            ok, err = conn:connect("10.6.2.51")
+            ok, err = conn:connect("127.0.0.1")
             if not ok then
                 ngx.say("connect failed: "..err)
             end
@@ -139,7 +110,7 @@ connect failed: connection refused
                 ngx.say("set keepalive failed: "..err)
             end
 
-            ok, err = conn:connect("10.6.2.51")
+            ok, err = conn:connect("127.0.0.1")
             if not ok then
                 ngx.say("connect failed: "..err)
             end
@@ -154,140 +125,6 @@ GET /t
 --- no_error_log
 [error]
 
-=== TEST 5: is master
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
-            conn:set_timeout(1000) 
-
-            ok, err = conn:connect("10.6.2.51")
-            if not ok then
-                ngx.say("connect failed: "..err)
-            end
-
-            r, h = conn:ismaster()
-            if not r then
-                ngx.say("query master failed: "..h)
-            end
-
-            ngx.say(r)
-            for i,v in pairs(h) do
-                ngx.say(v)
-            end
-            conn:close()
-        ';
-    }
---- request
-GET /t
---- response_body_like
-true
---- no_error_log
-[error]
-
-=== TEST 6: is not master
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
-            conn:set_timeout(1000) 
-
-            ok, err = conn:connect("10.6.2.51", 27018)
-            if not ok then
-                ngx.say("connect failed: "..err)
-            end
-
-            r, h = conn:ismaster()
-            if r == nil then
-                ngx.say("query master failed: "..h)
-            end
-
-            ngx.say(r)
-            for i,v in pairs(h) do
-                ngx.say(v)
-            end
-            conn:close()
-        ';
-    }
---- request
-GET /t
---- response_body_like
-false
---- no_error_log
-[error]
-
-=== TEST 7: get primary
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
-            conn:set_timeout(1000) 
-
-            ok, err = conn:connect("10.6.2.51", 27018)
-            if not ok then
-                ngx.say("connect failed: "..err)
-            end
-
-            r, h = conn:ismaster()
-            if r == nil then
-                ngx.say("query master failed: "..h)
-            end
-
-            if r then ngx.say("already master") return end
-
-            newconn,err = conn:getprimary()
-            if not newconn then
-                ngx.say("get primary failed: "..err)
-            end
-            r, h = newconn:ismaster()
-            if not r then
-                ngx.say("get master failed")
-            end
-
-            ngx.say("get primary")
-            conn:close()
-        ';
-    }
---- request
-GET /t
---- response_body
-get primary
---- no_error_log
-[error]
-
-=== TEST 8: db auth
---- http_config eval: $::HttpConfig
---- config
-    lua_code_cache off;
-    location /t {
-        content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
-            conn:set_timeout(1000) 
-
-            ok, err = conn:connect("10.6.2.51")
-            if not ok then
-                ngx.say("connect failed: "..err)
-            end
-
-            local db = conn:new_db_handle("test")
-            local r,err = db:auth("admin", "admin")
-            if not r then ngx.say("auth failed") end
-            ngx.say(r)
-        ';
-    }
---- request
-GET /t
---- response_body
-1
---- no_error_log
-[error]
 
 === TEST 9: col count
 --- http_config eval: $::HttpConfig
@@ -298,7 +135,7 @@ GET /t
             conn = mongo:new()
             conn:set_timeout(1000) 
 
-            ok, err = conn:connect("10.6.2.51")
+            ok, err = conn:connect("127.0.0.1")
             if not ok then
                 ngx.say("connect failed: "..err)
             end
@@ -336,11 +173,12 @@ GET /t
             conn = mongo:new()
             conn:set_timeout(1000) 
 
-            local r, err = conn:connect("10.6.2.51")
+            local r, err = conn:connect("127.0.0.1")
             if not r then ngx.say("connect failed: "..err) end
 
             local db = conn:new_db_handle("test")
             local col = db:get_col("test")
+
             r,err = col:update({name="dog"},{name="cat"}, nil, nil, true)
             if not r then ngx.say("update failed: "..err) end
 
@@ -393,7 +231,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-update failed: unauthorized
+update failed: need to login
 1
 cat
 1
@@ -413,7 +251,7 @@ cat
             conn = mongo:new()
             conn:set_timeout(1000) 
 
-            ok, err = conn:connect("10.6.2.51")
+            ok, err = conn:connect("127.0.0.1")
             if not ok then
                 ngx.say("connect failed: "..err)
             end
@@ -443,7 +281,7 @@ cat
 --- request
 GET /t
 --- response_body
-10
+4
 --- no_error_log
 [error]
 
@@ -456,7 +294,7 @@ GET /t
             conn = mongo:new()
             conn:set_timeout(1000) 
 
-            ok, err = conn:connect("10.6.2.51")
+            ok, err = conn:connect("127.0.0.1")
             if not ok then
                 ngx.say("connect failed: "..err)
             end
@@ -471,17 +309,17 @@ GET /t
             col = db:get_col("test")
             col:delete({name="puppy"})
 
-            for i = 1, 3 do
+            for i = 1, 10 do
                 col:insert({{name="puppy", n=i, m="foo"}})
             end
 
-            r = col:find({name="puppy"}, {n=0}, 4)
+            r = col:find({name="puppy"}, {n=0}, 3)
             for i , v in r:pairs() do
                 ngx.say(v["n"])
                 ngx.say(v["name"])
             end
 
-            r = col:find({name="puppy"}, {n=1}, 4)
+            r = col:find({name="puppy"}, {n=1}, 3)
             for i , v in r:pairs() do
                 ngx.say(v["n"])
                 ngx.say(v["name"])
@@ -515,7 +353,7 @@ nil
             conn = mongo:new()
             conn:set_timeout(1000) 
 
-            ok, err = conn:connect("10.6.2.51")
+            ok, err = conn:connect("127.0.0.1")
             if not ok then
                 ngx.say("connect failed: "..err)
             end
@@ -562,7 +400,7 @@ ns not found
             conn = mongo:new()
             conn:set_timeout(10000) 
 
-            local ok, err = conn:connect("10.6.2.51",27017)
+            local ok, err = conn:connect("127.0.0.1",27017)
             if not ok then
                 ngx.say("connect failed: "..err)
             end
@@ -620,7 +458,7 @@ not found
             conn = mongo:new()
             conn:set_timeout(10000) 
 
-            local ok, err = conn:connect("10.6.2.51")
+            local ok, err = conn:connect("127.0.0.1")
             if not ok then
                 ngx.say("connect failed: "..err)
             end
@@ -677,7 +515,7 @@ not found
 --- request
 GET /t
 --- response_body
-delete failed: unauthorized
+delete failed: need to login
 3
 1
 -1
@@ -692,7 +530,7 @@ delete failed: unauthorized
             local mongo = require "resty.mongol"
             conn = mongo:new()
             conn:set_timeout(10000) 
-            ok, err = conn:connect("10.6.2.51")
+            ok, err = conn:connect("127.0.0.1")
 
             if not ok then
                 ngx.say("connect failed: "..err)
@@ -759,7 +597,7 @@ a20
             local mongo = require "resty.mongol"
             conn = mongo:new()
             conn:set_timeout(10000) 
-            ok, err = conn:connect("10.6.2.51")
+            ok, err = conn:connect("127.0.0.1")
 
             if not ok then
                 ngx.say("connect failed: "..err)
@@ -809,7 +647,7 @@ nil
             local mongo = require "resty.mongol"
             conn = mongo:new()
             conn:set_timeout(10000) 
-            ok, err = conn:connect("10.6.2.51")
+            ok, err = conn:connect("127.0.0.1")
 
             if not ok then
                 ngx.say("connect failed: "..err)
@@ -878,7 +716,7 @@ a25
             local mongo = require "resty.mongol"
             conn = mongo:new()
             conn:set_timeout(10000) 
-            ok, err = conn:connect("10.6.2.51")
+            ok, err = conn:connect("127.0.0.1")
 
             if not ok then
                 ngx.say("connect failed: "..err)
@@ -927,7 +765,7 @@ GET /t
             local mongo = require "resty.mongol"
             conn = mongo:new()
             conn:set_timeout(10000) 
-            ok, err = conn:connect("10.6.2.51")
+            ok, err = conn:connect("127.0.0.1")
 
             if not ok then
                 ngx.say("connect failed: "..err)
@@ -959,6 +797,53 @@ GET /t
 GET /t
 --- response_body
 10
+--- no_error_log
+[error]
+
+=== TEST 21: query by skip and retnum
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local mongo = require "resty.mongol"
+            conn = mongo:new()
+            conn:set_timeout(10000) 
+            ok, err = conn:connect("127.0.0.1")
+
+            if not ok then
+                ngx.say("connect failed: "..err)
+            end
+
+            local db = conn:new_db_handle("test")
+            local col = db:get_col("test")
+
+            r = db:auth("admin", "admin")
+            if not r then ngx.say("auth failed") end
+
+            r, err = col:delete({}, nil, true)
+            if not r then ngx.say("delete failed: "..err) end
+
+            local t = {a=1,b=2}
+            
+            for i = 1, 10 do
+                col:insert({{name="puppy"}})
+            end
+
+            sel = {name="puppy"}
+            id, results, t = col:query(sel,{_id=1},0,1)
+            ngx.say(#results)
+
+            id, results, t = col:query(sel,{_id=1},5,5)
+            ngx.say(#results)
+
+            conn:close()
+        ';
+    }
+--- request
+GET /t
+--- response_body
+1
+5
 --- no_error_log
 [error]
 
