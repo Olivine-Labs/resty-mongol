@@ -76,11 +76,13 @@ function gridfs_mt:remove(fields, continue_on_err, safe)
     n = n + 1
     ids[#ids+1] = v._id
   end
-  local q = {['$in'] = ids}
-  r,err = self.chunk_col:delete({files_id=q}, continue_on_err, safe)
-  if not r then return nil, "remove chunks failed: "..err end
-  r,err = self.file_col:delete({_id=q}, continue_on_err, safe)
-  if not r then return nil, "remove files failed: "..err end
+  if n > 0 then
+    local q = {['$in'] = ids}
+    r,err = self.chunk_col:delete({files_id=q}, continue_on_err, safe)
+    if not r then return nil, "remove chunks failed: "..err end
+    r,err = self.file_col:delete({_id=q}, continue_on_err, safe)
+    if not r then return nil, "remove files failed: "..err end
+  end
   return n
 end
 
