@@ -30,8 +30,8 @@ __DATA__
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -84,8 +84,8 @@ abc45678901234567890
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -138,8 +138,8 @@ GET /t
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -192,8 +192,8 @@ abcabcdefdef34567890
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -246,8 +246,8 @@ abcabcdef01234567890
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -300,8 +300,8 @@ GET /t
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -354,8 +354,8 @@ GET /t
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -408,8 +408,8 @@ GET /t
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -462,8 +462,8 @@ abcdefghijklmnopqrstuvw
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -516,8 +516,8 @@ abcdefghijklmnopqrstuvw
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -570,8 +570,8 @@ GET /t
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -624,8 +624,8 @@ GET /t
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -683,8 +683,8 @@ GET /t
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000) 
             local ok, err = conn:connect("127.0.0.1")
 
@@ -734,8 +734,8 @@ abc
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000)
             local ok, err = conn:connect("127.0.0.1")
 
@@ -776,8 +776,8 @@ ABCDEFGHIJKLMNOPQRST
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(10000)
             local ok, err = conn:connect("127.0.0.1")
 

@@ -28,8 +28,8 @@ __DATA__
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(1000) 
 
             ok, err = conn:connect("127.0.0.1")
@@ -57,8 +57,8 @@ auth fails
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(1000) 
 
             ok, err = conn:connect("127.0.0.1")
@@ -90,8 +90,8 @@ true
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(1000) 
 
             ok, err = conn:connect("127.0.0.1", 27018)
@@ -123,8 +123,8 @@ false
 --- config
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(1000) 
 
             ok, err = conn:connect("127.0.0.1", 27018)
@@ -165,8 +165,8 @@ get primary
     lua_code_cache off;
     location /t {
         content_by_lua '
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(1000) 
 
             ok, err = conn:connect("127.0.0.1")
