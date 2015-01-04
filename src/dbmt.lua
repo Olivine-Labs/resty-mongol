@@ -72,7 +72,6 @@ function dbmethods:auth(username, password)
   } , "authenticate" ) )
   pairs = oldpairs
   if not r then
-    error(err)
     return nil, err
   end
   return 1

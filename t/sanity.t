@@ -61,8 +61,8 @@ __DATA__
     }
 --- request
 GET /t
---- response_body
-insert failed: need to login
+--- response_body_like
+insert failed: (need to login|not authorized).*
 0
 dog
 --- no_error_log
@@ -230,8 +230,8 @@ GET /t
     }
 --- request
 GET /t
---- response_body
-update failed: need to login
+--- response_body_like
+update failed: (need to login|not authorized).*
 1
 cat
 1
@@ -514,8 +514,8 @@ not found
     }
 --- request
 GET /t
---- response_body
-delete failed: need to login
+--- response_body_like
+delete failed: (need to login|not authorized).*
 3
 1
 -1

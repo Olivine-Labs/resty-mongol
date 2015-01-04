@@ -47,8 +47,8 @@ __DATA__
     }
 --- request
 GET /t
---- response_body
-auth fails
+--- response_body_like
+^auth fail.*
 --- no_error_log
 [error]
 
