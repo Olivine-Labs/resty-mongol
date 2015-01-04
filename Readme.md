@@ -275,19 +275,9 @@ Example
 
 For Test Case
 --------------------
-#####mongo config:
-    > config = {_id: 'testset', members: [
-              {_id: 0, host: '10.6.2.51:27017'},
-              {_id: 1, host: '10.6.2.51:27018'},
-              {_id: 2, host: '10.6.2.51:27019'}]
-        }
-    > rs.initiate(config);
 
-#####start-mongo.sh:
-        nohup bin/mongod --dbpath=/data/57cbd36d-5b70-4888-8537-bea71119363e/mongodb --oplogSize 10 --rest --replSet testset --port 27017 --keyFile key.file &
-        nohup bin/mongod --dbpath=/data/0a9419ae-4ec3-48c2-ad8d-df68a09aed13/mongodb --oplogSize 10 --rest --replSet testset --port 27018 --keyFile key.file &
-        nohup bin/mongod --dbpath=/data/8ee9efc0-a854-4c45-8893-7b4cb9ed0e5f/mongodb --oplogSize 10 --rest --replSet testset --port 27019 --keyFile key.file &
+To run the test suite:
 
-#####mongo user:
-    > use test
-    > db.addUser("admin","admin")
+```sh
+$ make test
+```

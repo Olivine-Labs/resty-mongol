@@ -1,0 +1,41 @@
+#!/bin/bash -e
+
+echo "Starting Test MongoDB Replica Set..."
+
+export MONGO1_PID="$PWD/t/tmp/mongodb/replica1.pid"
+export MONGO2_PID="$PWD/t/tmp/mongodb/replica2.pid"
+export MONGO3_PID="$PWD/t/tmp/mongodb/replica3.pid"
+export MONGO_KEY="$PWD/t/tmp/mongodb/key"
+
+if [ -f $MONGO1_PID ] && ps -p `cat $MONGO1_PID` > /dev/null; then kill -QUIT `cat $MONGO1_PID`; fi
+if [ -f $MONGO2_PID ] && ps -p `cat $MONGO2_PID` > /dev/null; then kill -QUIT `cat $MONGO2_PID`; fi
+if [ -f $MONGO3_PID ] && ps -p `cat $MONGO3_PID` > /dev/null; then kill -QUIT `cat $MONGO3_PID`; fi
+
+sleep 0.5
+
+rm -rf $PWD/t/tmp/mongodb
+
+mkdir $PWD/t/tmp/mongodb $PWD/t/tmp/mongodb/replica1 $PWD/t/tmp/mongodb/replica2 $PWD/t/tmp/mongodb/replica3
+echo -e "TESTKEY" > $PWD/t/tmp/mongodb/key
+chmod 600 $PWD/t/tmp/mongodb/key
+
+mongod --dbpath=$PWD/t/tmp/mongodb/replica1 --fork --logpath=$PWD/t/tmp/mongodb/replica1.log --oplogSize 10 --rest --replSet testset --port 27017 --keyFile $MONGO_KEY --pidfilepath $MONGO1_PID
+mongod --dbpath=$PWD/t/tmp/mongodb/replica2 --fork --logpath=$PWD/t/tmp/mongodb/replica2.log --oplogSize 10 --rest --replSet testset --port 27018 --keyFile $MONGO_KEY --pidfilepath $MONGO2_PID
+mongod --dbpath=$PWD/t/tmp/mongodb/replica3 --fork --logpath=$PWD/t/tmp/mongodb/replica3.log --oplogSize 10 --rest --replSet testset --port 27019 --keyFile $MONGO_KEY --pidfilepath $MONGO3_PID
+
+sleep 1
+
+mongo $PWD/t/mongodb/setup_replicaset.js
+
+WAIT=0
+until mongo -host testset/127.0.0.1:27017 test t/mongodb/setup_user.js &>> $PWD/t/tmp/mongodb/setup_user.log; do
+  echo "Replicaset not up yet. Sleeping..."
+  sleep 3
+  WAIT=$[$WAIT+1]
+  if [ $WAIT -gt 20 ]; then
+    echo "Replicaset did not startup in the expected amount of time... Check the logs in t/tmp/mongodb/*.log to debug"
+    exit 1
+  fi
+done
+
+echo "Replicaset up!"

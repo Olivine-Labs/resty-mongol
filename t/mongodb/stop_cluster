@@ -1,0 +1,11 @@
+#!/bin/bash -e
+
+echo "Stopping Test MongoDB Replica Set..."
+
+export MONGO1_PID="$PWD/t/tmp/mongodb/replica1.pid"
+export MONGO2_PID="$PWD/t/tmp/mongodb/replica2.pid"
+export MONGO3_PID="$PWD/t/tmp/mongodb/replica3.pid"
+
+if [ -f $MONGO1_PID ] && ps -p `cat $MONGO1_PID` > /dev/null; then kill -QUIT `cat $MONGO1_PID`; fi
+if [ -f $MONGO2_PID ] && ps -p `cat $MONGO2_PID` > /dev/null; then kill -QUIT `cat $MONGO2_PID`; fi
+if [ -f $MONGO3_PID ] && ps -p `cat $MONGO3_PID` > /dev/null; then kill -QUIT `cat $MONGO3_PID`; fi

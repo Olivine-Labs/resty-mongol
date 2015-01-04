@@ -1,0 +1,15 @@
+#!/bin/bash
+
+$PWD/t/mongodb/start_cluster
+if [ $? -ne 0 ]; then
+  echo "MongoDB did not startup. Exiting!"
+  exit 1
+fi
+
+prove
+
+# Exit with the status code of the "prove" command, but first cleanup and stop
+# the mongodb processes.
+STATUS=$?
+$PWD/t/mongodb/stop_cluster
+exit $STATUS
