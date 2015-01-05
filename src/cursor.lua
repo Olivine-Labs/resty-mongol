@@ -59,7 +59,7 @@ function cursor_methods:count()
 end
 
 function cursor_methods:next()
-  if self.limit_n > 0 and self.i - self.skip_n >= self.limit_n then return nil end
+  if self.limit_n > 0 and self.i >= self.limit_n then return nil end
 
   local v = self.results [ self.i - self.skip_n + 1 ]
   if v ~= nil then

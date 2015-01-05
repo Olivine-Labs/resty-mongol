@@ -274,6 +274,14 @@ cat
             for i , v in r:pairs() do
                 j = j +1
             end
+            ngx.say(j)
+
+            r = col:find({name="puppy"})
+            r:limit(4)
+            local j = 0
+            for i , v in r:pairs() do
+                j = j +1
+            end
 
             ngx.say(j)
         ';
@@ -281,6 +289,7 @@ cat
 --- request
 GET /t
 --- response_body
+10
 4
 --- no_error_log
 [error]
@@ -313,13 +322,15 @@ GET /t
                 col:insert({{name="puppy", n=i, m="foo"}})
             end
 
-            r = col:find({name="puppy"}, {n=0}, 3)
+            r = col:find({name="puppy"}, {n=0})
+            r:limit(3)
             for i , v in r:pairs() do
                 ngx.say(v["n"])
                 ngx.say(v["name"])
             end
 
-            r = col:find({name="puppy"}, {n=1}, 3)
+            r = col:find({name="puppy"}, {n=1})
+            r:limit(3)
             for i , v in r:pairs() do
                 ngx.say(v["n"])
                 ngx.say(v["name"])
