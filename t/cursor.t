@@ -123,37 +123,31 @@ GET /t
             r, err = col:insert(t, nil, true)
             if not r then ngx.say("insert failed: "..err) end
 
-            r = col:find({name="dog"}, nil, 5)
-            local ret,err = r:sort({n=-1})
-            if not ret then ngx.say("sort failed: "..err) 
-                ngx.exit(ngx.HTTP_OK) end
-            for i , v in pairs(ret) do
-                ngx.say(v["n"])
-            end
-
-            r = col:find({name="dog"}, nil, 5)
-            ret,err = r:sort({n=1})
-            if not ret then ngx.say("sort failed: "..err) 
-                ngx.exit(ngx.HTTP_OK) end
-            for i , v in pairs(ret) do
-                ngx.say(v["n"])
-            end
-
-            r = col:find({name="dog"}, nil, 5)
-            r:limit(3)
-            ret,err = r:sort({n=-1})
-            if not ret then ngx.say("sort failed: "..err) 
-                ngx.exit(ngx.HTTP_OK) end
-            for i , v in pairs(ret) do
-                ngx.say(v["n"])
-            end
-
-            r = col:find({name="dog"}, nil, 3)
+            r = col:find({name="dog"})
             r:limit(5)
-            ret,err = r:sort({n=1})
-            if not ret then ngx.say("sort failed: "..err) 
-                ngx.exit(ngx.HTTP_OK) end
-            for i , v in pairs(ret) do
+            r:sort({n=-1})
+            for i , v in r:pairs() do
+                ngx.say(v["n"])
+            end
+
+            r = col:find({name="dog"})
+            r:limit(5)
+            r:sort({n=1})
+            for i , v in r:pairs() do
+                ngx.say(v["n"])
+            end
+
+            r = col:find({name="dog"})
+            r:limit(3)
+            r:sort({n=-1})
+            for i , v in r:pairs() do
+                ngx.say(v["n"])
+            end
+
+            r = col:find({name="dog"})
+            r:limit(3)
+            r:sort({n=1})
+            for i , v in r:pairs() do
                 ngx.say(v["n"])
             end
 
@@ -163,19 +157,19 @@ GET /t
 --- request
 GET /t
 --- response_body
-5
+10
+9
+8
+7
+6
+1
+2
+3
 4
-3
-2
-1
-1
-2
-3
-4
 5
-3
-2
-1
+10
+9
+8
 1
 2
 3
@@ -222,22 +216,11 @@ GET /t
                 break
             end
 
-            local ret,err = r:sort({n=1})
-            if not ret then ngx.say("sort failed: "..err) 
-                ngx.exit(ngx.HTTP_OK) end
-            for i , v in pairs(ret) do
+            r:sort({n=1})
+            for i , v in r:pairs() do
                 ngx.say(v["n"])
             end
 
-            for k,v in r:pairs() do
-                ngx.say(v["n"])
-            end
-            local ret,err = r:sort({n=-1})
-            if not ret then ngx.say("sort failed: "..err) 
-                ngx.exit(ngx.HTTP_OK) end
-            for i , v in pairs(ret) do
-                ngx.say(v["n"])
-            end
             conn:close()
         ';
     }
@@ -250,11 +233,6 @@ GET /t
 3
 4
 5
-2
-3
-4
-5
-sort failed: sort must be an array
 --- no_error_log
 [error]
 
