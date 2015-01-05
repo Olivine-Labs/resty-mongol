@@ -37,8 +37,8 @@ Requring the module will return a function that connects to mongod:
 it takes a host (default localhost) and a port (default 27017);
 it returns a connection object.
 
-		mongol = require "resty.mongol"
-		conn = mongol:new() -- return a conntion object
+		mongol = require "resty-mongol"
+		conn = mongol() -- return a conntion object
 
 ###Connection objects have server wide methods.
 ------------
@@ -259,8 +259,8 @@ Known Issues
 
 Example
 ---------------------------
-            local mongo = require "resty.mongol"
-            conn = mongo:new()
+            local mongo = require "resty-mongol"
+            conn = mongo()
             conn:set_timeout(1000)
             ok, err = conn:connect()
             if not ok then
