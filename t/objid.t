@@ -60,7 +60,7 @@ __DATA__
             ngx.say(r["_id"]:get_inc())
             ngx.say(r["name"])
 
-            r = col:find_one({_id=r["id"]})
+            r = col:find_one({_id=r["_id"]})
             ngx.say(r["name"])
 
             conn:close()
