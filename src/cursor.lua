@@ -20,6 +20,7 @@ local function new_cursor(col, query, returnfields, num_each_query)
     i = 0;
     limit_n = 0;
     skip_n = 0;
+    overall_index = 0;
     num_each = num_each_query;
   } , cursor_mt )
 end
@@ -45,7 +46,6 @@ end
 function cursor_methods:skip(n)
   assert(n)
   self.skip_n = n
-  self.i = n
   return self
 end
 
@@ -59,28 +59,30 @@ function cursor_methods:count()
 end
 
 function cursor_methods:next()
-  if self.limit_n > 0 and self.i >= self.limit_n then return nil end
+  if self.limit_n > 0 and self.overall_index >= self.limit_n then return nil end
 
-  local v = self.results [ self.i - self.skip_n + 1 ]
+  local v = self.results [ self.i + 1 ]
   if v ~= nil then
     self.i = self.i + 1
-    self.results [ self.i - self.skip_n ] = nil
-    return self.i - self.skip_n , v
+    self.overall_index = self.overall_index + 1
+    self.results [ self.i ] = nil
+    return self.overall_index , v
   end
 
   if self.done then return nil end
 
+  self.i = 0
+
   local t
   if not self.id then
     self.id, self.results, t = self.col:query(self.query,
-    self.returnfields, self.i, self.num_each)
+    self.returnfields, self.skip_n, self.num_each)
     if self.id == "\0\0\0\0\0\0\0\0" then
       self.done = true
     end
   else
     self.id, self.results, t = self.col:getmore(self.id,
-    self.num_each, self.i)
-    self.skip_n = self.i
+    self.num_each, self.overall_index)
     if self.id == "\0\0\0\0\0\0\0\0" then
       self.done = true
     elseif t.CursorNotFound then
