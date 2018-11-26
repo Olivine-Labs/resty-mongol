@@ -37,7 +37,7 @@ Requring the module will return a function that connects to mongod:
 it takes a host (default localhost) and a port (default 27017);
 it returns a connection object.
 
-		mongol = require "resty.mongol"
+		mongol = require "resty-mongol"
 		conn = mongol() -- return a connection object
 
 ###Connection objects have server wide methods.
