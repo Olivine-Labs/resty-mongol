@@ -15,16 +15,11 @@ function connmethods:ismaster()
   if not r then
     return nil, err
   end
-  return r.ismaster, r.hosts
+  return r.ismaster, r.primary
 end
 
 function connmethods:getprimary(searched)
-
-  if not searched then
-    searched = {
-      [self.host .. ":" .. self.port] = true
-    }
-  end
+  -- searched is not nessary for now
 
   local db = self:new_db_handle("admin")
 
@@ -39,25 +34,16 @@ function connmethods:getprimary(searched)
 
   else
 
-    for i, v in ipairs ( r.hosts ) do
+    local host, port = parse_host(r.primary)
+    local conn = new()
 
-      if not searched[v] then
-
-        searched[v] = true
-        local host, port = parse_host(v)
-        local conn = new()
-
-        local ok, err = conn:connect(host, port)
-        if not ok then
-          return nil, "connect failed: "..err..v
-        end
-
-        local found = conn:getprimary(searched)
-        if found then
-          return found
-        end
-      end
+    local ok, err = conn:connect(host, port)
+    if not ok then
+      return nil, "connect failed: "..err
     end
+
+    return conn
+
   end
 
   return nil , "No master server found"
